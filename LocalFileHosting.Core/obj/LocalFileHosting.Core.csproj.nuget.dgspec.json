@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\AAA\\Downloads\\LocalFileHosting (8)\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj": {}
+    "C:\\Users\\AAA\\LocalFileHost\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj": {}
   },
   "projects": {
-    "C:\\Users\\AAA\\Downloads\\LocalFileHosting (8)\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj": {
+    "C:\\Users\\AAA\\LocalFileHost\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\AAA\\Downloads\\LocalFileHosting (8)\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj",
+        "projectUniqueName": "C:\\Users\\AAA\\LocalFileHost\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj",
         "projectName": "LocalFileHosting.Core",
-        "projectPath": "C:\\Users\\AAA\\Downloads\\LocalFileHosting (8)\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj",
+        "projectPath": "C:\\Users\\AAA\\LocalFileHost\\LocalFileHosting.Core\\LocalFileHosting.Core.csproj",
         "packagesPath": "C:\\Users\\AAA\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\AAA\\Downloads\\LocalFileHosting (8)\\LocalFileHosting.Core\\obj\\",
+        "outputPath": "C:\\Users\\AAA\\LocalFileHost\\LocalFileHosting.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

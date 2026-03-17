@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LocalFileHosting.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
+        x:Class="LocalFileHosting.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Local File Hosting"
+        RequestedThemeVariant="Dark"
+        Width="1024" Height="768"
+        WindowStartupLocation="CenterScreen">
+
+	<Design.DataContext>
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+
+	<Grid ColumnDefinitions="250, *">
+
+		<Border Grid.Column="0" Background="#1E1E2D">
+			<Grid RowDefinitions="Auto, *, Auto">
+
+				<TextBlock Grid.Row="0" Text="FileHost" FontSize="24" FontWeight="Bold" Foreground="White" Margin="20,20,20,40"/>
+
+				<StackPanel Grid.Row="1" Spacing="5" Margin="10,0">
+					<Button Content="Dashboard" Command="{Binding NavigateCommand}" CommandParameter="Dashboard"
+                            HorizontalAlignment="Stretch" Padding="15,12" Background="#2B2B40" Foreground="White" CornerRadius="8"/>
+
+					<Button Content="Hosted Files" Command="{Binding NavigateCommand}" CommandParameter="Hosted Files"
+                            HorizontalAlignment="Stretch" Padding="15,12" Background="Transparent" Foreground="#A1A5B7" CornerRadius="8"/>
+
+					<Button Content="Network Clients" Command="{Binding NavigateCommand}" CommandParameter="Network Clients"
+                            HorizontalAlignment="Stretch" Padding="15,12" Background="Transparent" Foreground="#A1A5B7" CornerRadius="8"/>
+
+					<Button Content="Settings" Command="{Binding NavigateCommand}" CommandParameter="Settings"
+                            HorizontalAlignment="Stretch" Padding="15,12" Background="Transparent" Foreground="#A1A5B7" CornerRadius="8"/>
+				</StackPanel>
+
+				<Border Grid.Row="2" Background="#151521" CornerRadius="8" Margin="15" Padding="15">
+					<StackPanel Orientation="Horizontal" Spacing="10">
+						<Ellipse Width="35" Height="35" Fill="#009EF7"/>
+						<StackPanel VerticalAlignment="Center">
+							<TextBlock Text="Anonymous" Foreground="White" FontWeight="SemiBold" FontSize="14"/>
+							<TextBlock Text="Host Mode" Foreground="#A1A5B7" FontSize="12"/>
+						</StackPanel>
+					</StackPanel>
+				</Border>
+			</Grid>
+		</Border>
+
+		<Border Grid.Column="1" Background="#151521">
+			<Grid RowDefinitions="Auto, *">
+
+				<Border Grid.Row="0" Background="#1E1E2D" Height="70" Padding="30,0">
+					<TextBlock Text="{Binding PageTitle}" VerticalAlignment="Center" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
+				</Border>
+				<Border Grid.Row="1" Margin="30" CornerRadius="12">
+					<ContentControl Content="{Binding CurrentPageContent}" />
+				</Border>
+			</Grid>
+		</Border>
+
+	</Grid>
+</Window>

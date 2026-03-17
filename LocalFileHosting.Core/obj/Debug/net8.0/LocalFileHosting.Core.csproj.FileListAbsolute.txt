@@ -11,3 +11,17 @@ C:\Users\AAA\Downloads\LocalFileHosting (8)\LocalFileHosting.Core\obj\Debug\net8
 C:\Users\AAA\Downloads\LocalFileHosting (8)\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.xml
 C:\Users\AAA\Downloads\LocalFileHosting (8)\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.pdb
 C:\Users\AAA\Downloads\LocalFileHosting (8)\LocalFileHosting.Core\obj\Debug\net8.0\ref\LocalFileHosting.Core.dll
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\bin\Debug\net8.0\LocalFileHosting.Core.deps.json
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\bin\Debug\net8.0\LocalFileHosting.Core.dll
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\bin\Debug\net8.0\LocalFileHosting.Core.pdb
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\bin\Debug\net8.0\LocalFileHosting.Core.xml
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.AssemblyInfoInputs.cache
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.AssemblyInfo.cs
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.csproj.CoreCompileInputs.cache
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.sourcelink.json
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.dll
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\refint\LocalFileHosting.Core.dll
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.xml
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\LocalFileHosting.Core.pdb
+C:\Users\AAA\LocalFileHost\LocalFileHosting.Core\obj\Debug\net8.0\ref\LocalFileHosting.Core.dll
