@@ -3,3 +3,9 @@
 ################################################################################
 
 /.vs/LocalFileHosting
+/LocalFileHosting.App/LocalFileHosting.App.csproj
+/LocalFileHosting.App/ConsoleExplorer.cs
+/LocalFileHosting.App/NetworkScanner.cs
+/LocalFileHosting.App/Program.cs
+/LocalFileHosting.App/ProgramClient.cs
+/LocalFileHosting.App/ProgramHost.cs
