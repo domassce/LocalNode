@@ -62,7 +62,7 @@ public partial class SettingsViewModel : ViewModelBase
             DefaultHostFolder = DefaultHostFolder,
             DefaultPort = DefaultPort,
             RoomPassword = RoomPassword,
-            LogDirectory = LogDirectory 
+            LogDirectory = LogDirectory
         };
 
         File.WriteAllText(ConfigFilePath, JsonSerializer.Serialize(config));

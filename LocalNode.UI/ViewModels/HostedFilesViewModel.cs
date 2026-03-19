@@ -1,7 +1,6 @@
 ﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using LocalNode.Core.Extensions;
 using LocalNode.Core.Services;
 using System;
 using System.Collections.Generic;
@@ -10,7 +9,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 
 namespace LocalNode.UI.ViewModels;
 
@@ -21,7 +19,7 @@ public class HostedFileItem
     public string FileType { get; set; } = string.Empty;
     public string SizeFormatted { get; set; } = string.Empty;
     public bool IsFolder { get; set; }
-   
+
 }
 
 public partial class HostedFilesViewModel : ViewModelBase

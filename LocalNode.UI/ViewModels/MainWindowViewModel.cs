@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using LocalNode.Core.Logging;
 using LocalNode.Core.Services;
 using LocalNode.Core.Storage;
 using LocalNode.UI.Services;
@@ -30,11 +29,9 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileService = new FileHostingService(logger, storage);
 
         _dashboardViewModel = new DashboardViewModel(_fileService, _settingsViewModel, logger);
-
-        // THIS IS THE CRITICAL FIX! 
         _hostedFilesViewModel = new HostedFilesViewModel(_fileService)
         {
-            Settings = _settingsViewModel // <-- We must give it the settings!
+            Settings = _settingsViewModel
         };
 
         _networkClientViewModel = new NetworkClientViewModel(_settingsViewModel);

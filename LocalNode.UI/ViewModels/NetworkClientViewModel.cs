@@ -1,15 +1,15 @@
 ﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using LocalNode.Core.Services;
-using System.Linq;
 
 namespace LocalNode.UI.ViewModels;
 
@@ -19,20 +19,20 @@ public class RemoteFileItem
     public string Type { get; set; } = string.Empty;
     public long Size { get; set; }
     public bool IsFolder { get; set; }
-
-
-    // Dynamically calculate the size for BOTH files and folders!
-    public string SizeFormatted
+    public string SizeFormatted => (IsFolder && Size == 0) ? "" : FormatSize(Size);
+    private static string FormatSize(long size)
     {
-        get
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = size;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
         {
-            if (IsFolder) return "--";
-            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-            double len = Size;
-            int order = 0;
-            while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
-            return $"{len:0.##} {sizes[order]}";
+            order++;
+            len /= 1024;
         }
+
+        return $"{len:0.##} {sizes[order]}";
     }
 }
 
@@ -51,8 +51,6 @@ public partial class NetworkClientViewModel : ViewModelBase
     [ObservableProperty] private ObservableCollection<DiscoveredNode> _availableNodes = new();
     [ObservableProperty] private bool _showPasswordPrompt = false;
     private DiscoveredNode? _selectedNode;
-
-    // Tracks where we are inside the server's folders
     [ObservableProperty] private string _currentRemotePath = string.Empty;
 
     [ObservableProperty] private ObservableCollection<RemoteFileItem> _remoteFiles = new();
@@ -63,26 +61,21 @@ public partial class NetworkClientViewModel : ViewModelBase
     {
         _settings = settings;
 
-        // 1. Start the UDP Listener in the background
         _ = Task.Run(() => _discoveryService.ListenForNodes(node =>
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (node.IP == "127.0.0.1") return; // Ignore localhost loopback
-
-                if (!AvailableNodes.Any(n => n.IP == node.IP))
+                if (node.IP == "127.0.0.1") return;
+                if (!AvailableNodes.Any(n => n.Name == node.Name))
                 {
                     AvailableNodes.Add(node);
                 }
             });
         }));
-
-        // 2. Start the 3-second timeout for the initial "Searching..." UI
         _ = Task.Run(async () =>
         {
             await Task.Delay(3000); // Wait 3 seconds
 
-            // Force the UI thread to update the scanning state
             Dispatcher.UIThread.Post(() =>
             {
                 IsScanning = false;
@@ -113,7 +106,7 @@ public partial class NetworkClientViewModel : ViewModelBase
         if (node.NeedsPassword)
         {
             StatusMessage = $"Node '{node.Name}' requires a password.";
-            ShowPasswordPrompt = true; // This will trigger your UI overlay
+            ShowPasswordPrompt = true;
         }
         else
         {
@@ -151,7 +144,7 @@ public partial class NetworkClientViewModel : ViewModelBase
         }
 
         StatusMessage = "Connecting...";
-        CurrentRemotePath = string.Empty; // Reset path to root
+        CurrentRemotePath = string.Empty;
 
         await LoadFilesFromPath(CurrentRemotePath);
 
@@ -162,7 +155,6 @@ public partial class NetworkClientViewModel : ViewModelBase
         }
     }
 
-    // Fetches the files for a specific directory path
     public async Task LoadFilesFromPath(string path)
     {
         try
@@ -196,8 +188,6 @@ public partial class NetworkClientViewModel : ViewModelBase
             StatusMessage = $"Error: {ex.Message}";
         }
     }
-
-    // Called when user clicks a folder
     public async Task NavigateIntoFolder(string folderName)
     {
         var newPath = Path.Combine(CurrentRemotePath, folderName);
@@ -209,8 +199,6 @@ public partial class NetworkClientViewModel : ViewModelBase
         AvailableNodes.Clear();
         IsScanning = true;
         StatusMessage = "Scanning network...";
-
-        // Give the network 3 seconds to respond
         await Task.Delay(3000);
 
         IsScanning = false;
@@ -224,11 +212,11 @@ public partial class NetworkClientViewModel : ViewModelBase
             StatusMessage = $"Found {AvailableNodes.Count} nodes.";
         }
     }
-   
+
     [RelayCommand]
     public async Task NavigateUp()
     {
-        if (string.IsNullOrEmpty(CurrentRemotePath)) return; // Already at root
+        if (string.IsNullOrEmpty(CurrentRemotePath)) return;
 
         var parentPath = Path.GetDirectoryName(CurrentRemotePath) ?? string.Empty;
         await LoadFilesFromPath(parentPath);
@@ -282,17 +270,12 @@ public partial class NetworkClientViewModel : ViewModelBase
 
             var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
-
-            // Extract the file name from headers (adds .zip if it was a folder!)
             string finalFileName = itemName;
             if (response.Content.Headers.ContentDisposition?.FileName != null)
             {
                 finalFileName = response.Content.Headers.ContentDisposition.FileName.Trim('"');
             }
-
-            // We default to Downloads folder for simplicity in this example, you can still use the picker in the View!
             string downloadPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", finalFileName);
-
             using var stream = await response.Content.ReadAsStreamAsync();
             using var fs = File.Create(downloadPath);
             await stream.CopyToAsync(fs);

@@ -1,16 +1,16 @@
 ﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using LocalNode.Core.Services;
 using LocalNode.Core.Interfaces;
+using LocalNode.Core.Services;
 using System;
-using System.IO;
-using System.IO.Compression; 
-using System.Net;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Text.Json;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace LocalNode.UI.ViewModels;
 
@@ -155,7 +155,7 @@ public partial class DashboardViewModel : ViewModelBase
         IsHosting = false;
         ServerStatusMessage = "Server stopped.";
 
-  
+
         RefreshStats();
     }
 

@@ -1,11 +1,10 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
 using LocalNode.UI.ViewModels;
 using LocalNode.UI.Views;
+using System.Linq;
 
 namespace LocalNode.UI;
 
