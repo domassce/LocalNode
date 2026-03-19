@@ -4,10 +4,11 @@
              x:Class="LocalFileHosting.UI.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
 
-    <StackPanel Spacing="20">
-        <TextBlock Text="System Overview" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+	<StackPanel Spacing="20">
+		<TextBlock Text="System Overview" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
 
 		<UniformGrid Columns="3">
+
 			<Border Background="#2B2B40" CornerRadius="12" Padding="20" Margin="0,0,10,0">
 				<StackPanel Spacing="10">
 					<TextBlock Text="Total Files" Foreground="#A1A5B7" FontSize="14" FontWeight="Medium"/>
@@ -30,44 +31,33 @@
 			</Border>
 
 		</UniformGrid>
-		<TextBlock Text="Server Configuration" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,20,0,0"/>
 
-		<Border Background="#1E1E2D" CornerRadius="12" Padding="20" BorderBrush="#2B2B40" BorderThickness="1">
-			<Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, Auto">
+		<TextBlock Text="Server Status" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,20,0,0"/>
 
-				<StackPanel Grid.Row="0" Grid.Column="0" Spacing="15" Margin="0,0,20,0">
-					<StackPanel Spacing="5">
-						<TextBlock Text="Folder to Host" Foreground="#A1A5B7"/>
-						<Grid ColumnDefinitions="*, Auto">
-							<TextBox Text="{Binding SelectedFolderPath}" Grid.Column="0" Background="#151521" Foreground="White" IsReadOnly="True" CornerRadius="6,0,0,6"/>
-							<Button Grid.Column="1" Content="Browse..." Click="OnBrowseFolderClicked" Background="#3E97FF" Foreground="White" CornerRadius="0,6,6,0"/>
-						</Grid>
-					</StackPanel>
+		<Border Background="#1E1E2D" CornerRadius="12" Padding="30" BorderBrush="#2B2B40" BorderThickness="1">
+			<Grid ColumnDefinitions="*, Auto">
 
-					<Grid ColumnDefinitions="*, *">
-						<StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
-							<TextBlock Text="Port" Foreground="#A1A5B7"/>
-							<TextBox Text="{Binding Port}" Background="#151521" Foreground="White" CornerRadius="6"/>
-						</StackPanel>
-
-						<StackPanel Grid.Column="1" Spacing="5" Margin="10,0,0,0">
-							<TextBlock Text="Room Password (Optional)" Foreground="#A1A5B7"/>
-							<TextBox Text="{Binding RoomPassword}" PasswordChar="*" Background="#151521" Foreground="White" CornerRadius="6"/>
-						</StackPanel>
-					</Grid>
+				<StackPanel Grid.Column="0" VerticalAlignment="Center">
+					<TextBlock Text="{Binding ServerStatusMessage}" Foreground="White" FontSize="18" Margin="0,5,0,0"/>
 				</StackPanel>
 
-				<Button Grid.Row="0" Grid.Column="1" VerticalAlignment="Bottom" Height="65" Width="150"
-                        Command="{Binding ToggleHostingCommand}"
-                        Background="{Binding IsHosting, Converter={x:Static ObjectConverters.IsNull}}"
-                        CornerRadius="8">
+				<Button Grid.Column="1" Command="{Binding ToggleHostingCommand}"
+                        Background="#3E97FF"
+                        CornerRadius="8" Padding="30,15">
 					<Panel>
-						<TextBlock Text="Start Server" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsHosting}"/>
-						<TextBlock Text="Stop Server" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsHosting}"/>
+						<StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding !IsHosting}">
+							<TextBlock Text="▶" Foreground="#50CD89" FontSize="16" VerticalAlignment="Center"/>
+							<TextBlock Text="START SERVER" Foreground="White" FontSize="16" FontWeight="Bold"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsHosting}">
+							<TextBlock Text="■" Foreground="#F1416C" FontSize="16" VerticalAlignment="Center"/>
+							<TextBlock Text="STOP SERVER" Foreground="White" FontSize="16" FontWeight="Bold"/>
+						</StackPanel>
 					</Panel>
 				</Button>
 
 			</Grid>
 		</Border>
-    </StackPanel>
+	</StackPanel>
 </UserControl>

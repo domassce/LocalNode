@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LocalFileHosting.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cc8fe986ae05297b129eef9674e3d2a7fa0e6e57")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1fe17e87c91be33d97884c781eecda780bbe4cac")]
 [assembly: System.Reflection.AssemblyProductAttribute("LocalFileHosting.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LocalFileHosting.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

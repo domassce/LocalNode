@@ -1,100 +1,132 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalFileHosting.Core.Services;
-using LocalFileHosting.Core.Models;
+using LocalFileHosting.Core.Interfaces;
 using System;
 using System.IO;
+using System.IO.Compression; // <-- Required for Zipping folders!
 using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Collections.Generic;
 
 namespace LocalFileHosting.UI.ViewModels;
 
 public partial class DashboardViewModel : ViewModelBase
 {
+
+    public static DateTime GlobalLastActionTime { get; set; } = DateTime.MinValue;
     private readonly FileHostingService _fileService;
+    private readonly SettingsViewModel _settings;
+    private readonly ILogger _logger;
     private HttpListener? _listener;
 
-    // Stat properties
     [ObservableProperty] private int _totalFiles;
     [ObservableProperty] private string _totalSize = "0 MB";
     [ObservableProperty] private string _lastUpdated = "Never";
 
-    // Form properties
-    [ObservableProperty] private string _selectedFolderPath = string.Empty;
-    [ObservableProperty] private string _port = "5050";
-    [ObservableProperty] private string _roomPassword = string.Empty;
-
     [ObservableProperty] private bool _isHosting = false;
     [ObservableProperty] private string _serverStatusMessage = "Ready to host.";
 
-    public DashboardViewModel(FileHostingService fileService)
+
+    public DashboardViewModel(FileHostingService fileService, SettingsViewModel settings, ILogger logger)
     {
         _fileService = fileService;
-        RefreshStats();
+        _settings = settings;
+        _logger = logger;
     }
-
     public void RefreshStats()
     {
-        var stats = _fileService.GetStats();
-        TotalFiles = stats.TotalFiles;
-        TotalSize = $"{stats.TotalSize / 1024.0 / 1024.0:F2} MB";
-        LastUpdated = stats.LastUpdated.ToString("T");
+        if (!IsHosting || string.IsNullOrWhiteSpace(_settings.DefaultHostFolder) || !Directory.Exists(_settings.DefaultHostFolder))
+        {
+            TotalFiles = 0;
+            TotalSize = "0 MB";
+            LastUpdated = "Never";
+            return;
+        }
+
+        Task.Run(() =>
+        {
+            try
+            {
+                var files = Directory.GetFiles(_settings.DefaultHostFolder, "*.*", SearchOption.AllDirectories);
+                long totalSize = files.Sum(f => new FileInfo(f).Length);
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    TotalFiles = files.Length;
+                    TotalSize = FormatSize(totalSize);
+
+                    // THIS IS THE ONLY LINE THAT SHOULD SET THE TIME!
+                    // If yours said 'DateTime.Now.ToString()' here, that was the bug!
+                    LastUpdated = GlobalLastActionTime == DateTime.MinValue
+                        ? "Never"
+                        : GlobalLastActionTime.ToString("HH:mm:ss");
+                });
+            }
+            catch { }
+        });
+    }
+    private string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
+        return $"{len:0.##} {sizes[order]}";
     }
 
+    // An internal lock to prevent button spamming!
+    private bool _isBusy = false;
+
     [RelayCommand]
-    private void ToggleHosting()
+    private async Task ToggleHostingAsync() // <-- Notice this is now Async!
     {
-        if (IsHosting)
-        {
-            StopServer();
-        }
-        else
-        {
-            StartServer();
-        }
+        // If they are spamming the button, ignore the clicks!
+        if (_isBusy) return;
+
+        _isBusy = true;
+
+        if (IsHosting) StopServer();
+        else StartServer();
+
+        // Add a tiny 500-millisecond cooldown before they can click it again
+        await Task.Delay(500);
+        _isBusy = false;
     }
 
     private void StartServer()
     {
-        if (string.IsNullOrWhiteSpace(SelectedFolderPath) || !Directory.Exists(SelectedFolderPath))
+        string folder = _settings.DefaultHostFolder;
+        string portStr = _settings.DefaultPort;
+
+        if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
         {
-            ServerStatusMessage = "Please select a valid folder first!";
+            ServerStatusMessage = "Please set a valid Hosting Folder in Settings!";
             return;
         }
 
-        if (!int.TryParse(Port, out int portNumber))
-        {
-            ServerStatusMessage = "Invalid port number!";
-            return;
-        }
-
-        // 1. Load files into the Core Service
-        var files = Directory.GetFiles(SelectedFolderPath);
-        foreach (var f in files)
-        {
-            _fileService.AddFiles(FileCategorizer.Categorize(f));
-        }
-        RefreshStats();
-
-        // 2. Start the HttpListener
         try
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://localhost:{portNumber}/");
-            _listener.Prefixes.Add($"http://127.0.0.1:{portNumber}/");
+            _listener.Prefixes.Add($"http://localhost:{portStr}/");
+            _listener.Prefixes.Add($"http://127.0.0.1:{portStr}/");
             _listener.Start();
 
             IsHosting = true;
-            ServerStatusMessage = $"Hosting on port {portNumber}...";
+            GlobalLastActionTime = DateTime.Now;
+            ServerStatusMessage = $"Hosting on port {portStr}...";
+            _logger.LogInfo($"[Server] Started hosting on port {portStr}. Folder: {folder}");
 
-            // Run the listener loop in the background so we don't freeze the UI!
             Task.Run(ListenLoop);
+            RefreshStats();
         }
         catch (Exception ex)
         {
             ServerStatusMessage = $"Failed to start: {ex.Message}";
+            _logger.LogError("[Server] Failed to start HTTP Listener.", ex);
         }
     }
 
@@ -106,9 +138,11 @@ public partial class DashboardViewModel : ViewModelBase
 
         IsHosting = false;
         ServerStatusMessage = "Server stopped.";
+
+        // THIS IS THE FIX! Tell the UI to recalculate (which will reset to 0 since IsHosting is false)
+        RefreshStats();
     }
 
-    // This is essentially the HandleRequest method from your old ProgramHost.cs
     private async Task ListenLoop()
     {
         while (IsHosting && _listener != null && _listener.IsListening)
@@ -117,77 +151,95 @@ public partial class DashboardViewModel : ViewModelBase
             {
                 var context = await _listener.GetContextAsync();
 
-                // Process the request immediately in a fire-and-forget task
                 _ = Task.Run(async () =>
                 {
                     var req = context.Request;
                     var res = context.Response;
+                    string clientIp = req.RemoteEndPoint?.ToString() ?? "Unknown IP";
+                    string clientName = req.Headers["X-User-Name"] ?? "Anonymous Client";
 
                     try
                     {
-                        // Check Password
-                        string? clientPass = req.Headers["X-Room-Password"];
-                        if (!string.IsNullOrEmpty(RoomPassword) && clientPass != RoomPassword)
+                        string requiredPass = _settings.RoomPassword;
+                        if (!string.IsNullOrEmpty(requiredPass) && req.Headers["X-Room-Password"] != requiredPass)
                         {
                             res.StatusCode = 401;
                             res.Close();
                             return;
                         }
 
+                        // Read the requested relative path from the query URL
+                        string requestedPath = req.QueryString["path"] ?? "";
+                        string targetPhysicalPath = Path.GetFullPath(Path.Combine(_settings.DefaultHostFolder, requestedPath));
+
+                        // Security check: Don't allow navigating outside the root host folder
+                        if (!targetPhysicalPath.StartsWith(Path.GetFullPath(_settings.DefaultHostFolder)))
+                        {
+                            res.StatusCode = 403;
+                            return;
+                        }
+
                         if (req.Url!.AbsolutePath == "/api/files")
                         {
-                            // We get the files from the core service now
-                            // Using a little reflection to get the type name, just like the old console app
-                            var dto = _fileService.FilterFiles(f => true)
-                                .Select(f => new { f.Name, Type = f.GetType().Name, f.Size })
-                                .ToList();
+                            var items = new List<object>();
 
-                            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(dto);
+                            if (Directory.Exists(targetPhysicalPath))
+                            {
+                                // 1. Add Folders
+                                foreach (var d in Directory.GetDirectories(targetPhysicalPath))
+                                {
+                                    items.Add(new { Name = Path.GetFileName(d), Type = "Folder", Size = 0L, IsFolder = true });
+                                }
+                                // 2. Add Files
+                                foreach (var f in Directory.GetFiles(targetPhysicalPath))
+                                {
+                                    var info = new FileInfo(f);
+                                    var cat = FileCategorizer.Categorize(f).GetType().Name.Replace("File", "");
+                                    items.Add(new { Name = info.Name, Type = cat, Size = info.Length, IsFolder = false });
+                                }
+                            }
+
+                            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(items);
                             res.ContentType = "application/json";
                             res.ContentLength64 = bytes.Length;
                             res.StatusCode = 200;
-
                             await res.OutputStream.WriteAsync(bytes, 0, bytes.Length);
                         }
                         else if (req.Url.AbsolutePath == "/api/download")
                         {
-                            var fileName = req.QueryString["name"];
-                            var filePath = Path.Combine(SelectedFolderPath, fileName ?? "");
-
-                            if (File.Exists(filePath))
+                            if (Directory.Exists(targetPhysicalPath))
                             {
+                                // ZIP FOLDER ON THE FLY
+                                _logger.LogInfo($"[Network] {clientName} ({clientIp}) is downloading folder '{requestedPath}'.");
+                                string tempZip = Path.GetTempFileName() + ".zip";
+                                ZipFile.CreateFromDirectory(targetPhysicalPath, tempZip);
+
+                                res.ContentType = "application/zip";
+                                res.AddHeader("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(targetPhysicalPath)}.zip\"");
+                                using var fs = File.OpenRead(tempZip);
+                                res.ContentLength64 = fs.Length;
+                                await fs.CopyToAsync(res.OutputStream);
+                                fs.Close();
+                                File.Delete(tempZip); // Clean up temp file
+                            }
+                            else if (File.Exists(targetPhysicalPath))
+                            {
+                                // STANDARD FILE DOWNLOAD
+                                _logger.LogInfo($"[Network] {clientName} ({clientIp}) is downloading '{requestedPath}'.");
                                 res.ContentType = "application/octet-stream";
-                                res.AddHeader("Content-Disposition", $"attachment; filename=\"{Uri.EscapeDataString(fileName!)}\"");
-                                using var fs = File.OpenRead(filePath);
+                                res.AddHeader("Content-Disposition", $"attachment; filename=\"{Uri.EscapeDataString(Path.GetFileName(targetPhysicalPath))}\"");
+                                using var fs = File.OpenRead(targetPhysicalPath);
                                 res.ContentLength64 = fs.Length;
                                 await fs.CopyToAsync(res.OutputStream);
                             }
-                            else
-                            {
-                                res.StatusCode = 404;
-                            }
+                            else { res.StatusCode = 404; }
                         }
                     }
-                    catch
-                    {
-                        res.StatusCode = 500;
-                    }
-                    finally
-                    {
-                        try { res.Close(); } catch { }
-                    }
+                    catch { res.StatusCode = 500; }
+                    finally { try { res.Close(); } catch { } }
                 });
             }
-            catch (HttpListenerException)
-            {
-                // Expected when listener is stopped
-                break;
-            }
-            catch (ObjectDisposedException)
-            {
-                // Expected when listener is stopped
-                break;
-            }
+            catch { break; }
         }
     }
 }

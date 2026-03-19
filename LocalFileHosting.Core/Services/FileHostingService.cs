@@ -21,6 +21,8 @@ namespace LocalFileHosting.Core.Services
         // REIKALAVIMAS: Naudojamos duomenų struktūros iš System.Collections.Generic (1 t.)
         private readonly Dictionary<Guid, IFileEntity> _fileIndex;
 
+        private DateTime _lastUpdated = DateTime.MinValue;
+
         /// <summary>
         /// Occurs when a new file is successfully added to the storage provider.
         /// </summary>
@@ -69,6 +71,7 @@ namespace LocalFileHosting.Core.Services
                     if (_storage.SaveFile(file))
                     {
                         _fileIndex[file.Id] = file;
+                        _lastUpdated = DateTime.Now; // <-- ADD THIS
                         _logger.LogInfo($"Added file: {file.Name}");
                         FileAdded?.Invoke(this, file);
                     }
@@ -138,6 +141,7 @@ namespace LocalFileHosting.Core.Services
             if (_fileIndex.Remove(id))
             {
                 _storage.DeleteFile(id);
+                _lastUpdated = DateTime.Now; // <-- ADD THIS
                 FileDeleted?.Invoke(this, id);
                 return true;
             }
@@ -301,7 +305,7 @@ namespace LocalFileHosting.Core.Services
             return new FileStatsRecord(
                 TotalFiles: allFiles.Count,
                 TotalSize: allFiles.Sum(f => f.Size),
-                LastUpdated: DateTime.UtcNow
+                LastUpdated: _lastUpdated 
             );
         }
     }
