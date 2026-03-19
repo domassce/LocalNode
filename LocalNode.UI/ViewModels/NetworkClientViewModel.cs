@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using LocalNode.Core.Services;
+using System.Linq;
 
 namespace LocalNode.UI.ViewModels;
 
@@ -18,13 +20,13 @@ public class RemoteFileItem
     public long Size { get; set; }
     public bool IsFolder { get; set; }
 
-    public string Icon => IsFolder ? "📁" : "📄";
 
     // Dynamically calculate the size for BOTH files and folders!
     public string SizeFormatted
     {
         get
         {
+            if (IsFolder) return "--";
             string[] sizes = { "B", "KB", "MB", "GB", "TB" };
             double len = Size;
             int order = 0;
@@ -39,11 +41,16 @@ public partial class NetworkClientViewModel : ViewModelBase
     private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly SettingsViewModel _settings;
+    private readonly DiscoveryService _discoveryService = new();
 
+    [ObservableProperty] private bool _isScanning = true;
     [ObservableProperty] private string _serverUrl = "http://localhost:5050";
     [ObservableProperty] private string _roomPassword = string.Empty;
     [ObservableProperty] private string _statusMessage = "Ready to connect.";
     [ObservableProperty] private bool _isConnected = false;
+    [ObservableProperty] private ObservableCollection<DiscoveredNode> _availableNodes = new();
+    [ObservableProperty] private bool _showPasswordPrompt = false;
+    private DiscoveredNode? _selectedNode;
 
     // Tracks where we are inside the server's folders
     [ObservableProperty] private string _currentRemotePath = string.Empty;
@@ -55,14 +62,83 @@ public partial class NetworkClientViewModel : ViewModelBase
     public NetworkClientViewModel(SettingsViewModel settings)
     {
         _settings = settings;
+
+        // 1. Start the UDP Listener in the background
+        _ = Task.Run(() => _discoveryService.ListenForNodes(node =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (node.IP == "127.0.0.1") return; // Ignore localhost loopback
+
+                if (!AvailableNodes.Any(n => n.IP == node.IP))
+                {
+                    AvailableNodes.Add(node);
+                }
+            });
+        }));
+
+        // 2. Start the 3-second timeout for the initial "Searching..." UI
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000); // Wait 3 seconds
+
+            // Force the UI thread to update the scanning state
+            Dispatcher.UIThread.Post(() =>
+            {
+                IsScanning = false;
+
+                if (AvailableNodes.Count == 0)
+                {
+                    StatusMessage = "No active nodes found.";
+                }
+            });
+        });
     }
 
     private void AttachClientHeaders(HttpRequestMessage request)
     {
-        if (!string.IsNullOrEmpty(RoomPassword)) request.Headers.Add("X-Room-Password", RoomPassword);
-        request.Headers.Add("X-User-Name", _settings.DisplayName);
+        if (!string.IsNullOrEmpty(RoomPassword))
+        {
+            request.Headers.Add("X-Room-Password", RoomPassword);
+        }
+        string safeUserName = string.IsNullOrWhiteSpace(_settings.DisplayName) ? "Anonymous" : _settings.DisplayName;
+        request.Headers.Add("X-User-Name", safeUserName);
+    }
+    [RelayCommand]
+    public async Task SelectDiscoveredNode(DiscoveredNode node)
+    {
+        _selectedNode = node;
+        ServerUrl = $"http://{node.IP}:{node.Port}";
+
+        if (node.NeedsPassword)
+        {
+            StatusMessage = $"Node '{node.Name}' requires a password.";
+            ShowPasswordPrompt = true; // This will trigger your UI overlay
+        }
+        else
+        {
+            RoomPassword = string.Empty;
+            await ConnectAsync();
+        }
+    }
+    [RelayCommand]
+    private void DisconnectServer()
+    {
+        Disconnect();
+    }
+    [RelayCommand]
+    public async Task SubmitPasswordAndConnect()
+    {
+        ShowPasswordPrompt = false;
+        await ConnectAsync();
     }
 
+    [RelayCommand]
+    public void CancelPassword()
+    {
+        ShowPasswordPrompt = false;
+        StatusMessage = "Connection cancelled.";
+    }
     [RelayCommand]
     public async Task ConnectAsync()
     {
@@ -91,7 +167,7 @@ public partial class NetworkClientViewModel : ViewModelBase
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{ServerUrl.TrimEnd('/')}/api/files?path={Uri.EscapeDataString(path)}");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{ServerUrl.TrimEnd('/')}/api/files?path={Uri.EscapeDataString(path ?? "")}");
             AttachClientHeaders(request);
 
             var response = await _httpClient.SendAsync(request);
@@ -127,8 +203,28 @@ public partial class NetworkClientViewModel : ViewModelBase
         var newPath = Path.Combine(CurrentRemotePath, folderName);
         await LoadFilesFromPath(newPath);
     }
+    [RelayCommand]
+    public async Task RefreshNodesAsync()
+    {
+        AvailableNodes.Clear();
+        IsScanning = true;
+        StatusMessage = "Scanning network...";
 
-    // Called when user clicks the "Back" button
+        // Give the network 3 seconds to respond
+        await Task.Delay(3000);
+
+        IsScanning = false;
+
+        if (AvailableNodes.Count == 0)
+        {
+            StatusMessage = "No nodes found.";
+        }
+        else
+        {
+            StatusMessage = $"Found {AvailableNodes.Count} nodes.";
+        }
+    }
+   
     [RelayCommand]
     public async Task NavigateUp()
     {

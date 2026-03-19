@@ -4,57 +4,142 @@
              x:Class="LocalNode.UI.Views.NetworkClientView"
              x:DataType="vm:NetworkClientViewModel">
 
-	<Grid RowDefinitions="Auto, *">
+	<Grid>
+		<Grid RowDefinitions="Auto, *">
 
-		<Border Grid.Row="0" Background="#1E1E2D" CornerRadius="12" Padding="20" Margin="0,0,0,20">
-			<StackPanel Spacing="15">
-				<TextBlock Text="Connect to Remote Server" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+			<StackPanel Grid.Row="0" Spacing="15" Margin="0,0,0,20">
 
-				<Grid ColumnDefinitions="*, *, Auto">
-					<TextBox Grid.Column="0" Text="{Binding ServerUrl}" Watermark="Server URL" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
-					<TextBox Grid.Column="1" Text="{Binding RoomPassword}" PasswordChar="*" Watermark="Password (Optional)" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
-					<Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" Background="#009EF7" Foreground="White" FontWeight="Bold" Padding="20,8" CornerRadius="6"/>
-				</Grid>
+				<Border Background="#1E1E2D" CornerRadius="12" Padding="20">
+					<StackPanel Spacing="15">
+						<TextBlock Text="Connect to Remote Server" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+						<Grid ColumnDefinitions="*, *, Auto">
+							<TextBox Grid.Column="0" Text="{Binding ServerUrl}" Watermark="Server URL" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
+							<TextBox Grid.Column="1" Text="{Binding RoomPassword}" PasswordChar="*" Watermark="Password (Optional)" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
+							<Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" Background="#009EF7" Foreground="White" FontWeight="Bold" Padding="20,8" CornerRadius="6"/>
+						</Grid>
+						<Grid ColumnDefinitions="*, Auto">
+							<TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#50CD89" FontWeight="Medium" VerticalAlignment="Center"/>
 
-				<Grid ColumnDefinitions="*, Auto">
-					<TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#50CD89" FontWeight="Medium" VerticalAlignment="Center"/>
+							<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+								<Button Content="Disconnect" Command="{Binding DisconnectServerCommand}"
+                                        IsVisible="{Binding IsConnected}"
+                                        Background="#F1416C" Foreground="White" CornerRadius="6"/>
+								<Button Content="&lt; Go Back" Command="{Binding NavigateUpCommand}"
+                                        IsVisible="{Binding CurrentRemotePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                        Background="#2B2B40" Foreground="White" CornerRadius="6"/>
+							</StackPanel>
+						</Grid>
+					</StackPanel>
+				</Border>
 
-					<Button Grid.Column="1" Content="⬅ Go Back" Command="{Binding NavigateUpCommand}"
-                            IsVisible="{Binding CurrentRemotePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                            Background="#2B2B40" Foreground="White" CornerRadius="6"/>
-				</Grid>
-			</StackPanel>
-		</Border>
+				<Border Background="#1E1E2D" CornerRadius="12" Padding="20" IsVisible="{Binding !IsConnected}">
+					<StackPanel Spacing="15">
 
-		<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" IsVisible="{Binding IsConnected}">
-			<Grid RowDefinitions="Auto, *">
+						<Grid ColumnDefinitions="*, Auto">
+							<TextBlock Grid.Column="0" Text="Nearby Nodes Found"
+									   IsVisible="{Binding !!AvailableNodes.Count}"
+									   FontSize="14" FontWeight="SemiBold" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+							<Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshNodesCommand}"
+									Background="#2B2B40" Foreground="White" Padding="15,5" CornerRadius="6"/>
+						</Grid>
 
-				<Grid Grid.Row="0" ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="20,15,20,10">
-					<TextBlock Grid.Column="1" Text="NAME" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
-					<TextBlock Grid.Column="2" Text="TYPE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
-					<TextBlock Grid.Column="3" Text="SIZE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
-					<TextBlock Grid.Column="4" Text="ACTION" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12" Width="100" TextAlignment="Center"/>
-				</Grid>
-				<Rectangle Grid.Row="0" Height="1" Fill="#2B2B40" VerticalAlignment="Bottom"/>
+						<ItemsControl ItemsSource="{Binding AvailableNodes}" IsVisible="{Binding !!AvailableNodes.Count}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<WrapPanel />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Button Command="{Binding $parent[UserControl].((vm:NetworkClientViewModel)DataContext).SelectDiscoveredNodeCommand}"
+											CommandParameter="{Binding}"
+											Background="#2B2B40" Margin="0,0,10,10" Padding="15,10" CornerRadius="8">
+										<StackPanel Orientation="Horizontal" Spacing="12">
+											<StackPanel>
+												<TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold"/>
+												<TextBlock Text="{Binding IP}" Foreground="#A1A5B7" FontSize="11"/>
+											</StackPanel>
+											<TextBlock Text="[LOCKED]" Foreground="#F1416C" FontSize="11" FontWeight="Bold"
+													   IsVisible="{Binding NeedsPassword}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+										</StackPanel>
+									</Button>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
 
-				<ListBox Grid.Row="1" ItemsSource="{Binding RemoteFiles}" Background="Transparent" Margin="10" DoubleTapped="OnItemDoubleTapped">
-					<ListBox.ItemTemplate>
-						<DataTemplate>
-							<Grid ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="10,8" Background="Transparent">
-								<TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+						<Border Background="#151521" CornerRadius="8" Padding="30" IsVisible="{Binding !AvailableNodes.Count}">
+							<Grid>
+								<TextBlock Text="Searching network for active nodes..."
+										   IsVisible="{Binding IsScanning}"
+										   Foreground="#A1A5B7" FontStyle="Italic" HorizontalAlignment="Center"/>
 
-								<TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,15,0"/>
-								<TextBlock Grid.Column="2" Text="{Binding Type}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
-								<TextBlock Grid.Column="3" Text="{Binding SizeFormatted}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
-
-								<Button Grid.Column="4" Content="Download" Width="100" HorizontalContentAlignment="Center"
-                                        Click="OnDownloadClicked" Tag="{Binding Name}"
-                                        Background="#3E97FF" Foreground="White" CornerRadius="6"/>
+								<TextBlock Text="No active nodes found on the local network."
+										   IsVisible="{Binding !IsScanning}"
+										   Foreground="#F1416C" FontWeight="SemiBold" HorizontalAlignment="Center"/>
 							</Grid>
-						</DataTemplate>
-					</ListBox.ItemTemplate>
-				</ListBox>
-			</Grid>
+						</Border>
+
+					</StackPanel>
+				</Border>
+			</StackPanel>
+
+			<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" IsVisible="{Binding IsConnected}">
+				<Grid RowDefinitions="Auto, *">
+					<Grid Grid.Row="0" ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="20,15,20,10">
+						<TextBlock Grid.Column="0" Width="34" />
+						<TextBlock Grid.Column="1" Text="NAME" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+						<TextBlock Grid.Column="2" Text="TYPE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+						<TextBlock Grid.Column="3" Text="SIZE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+						<TextBlock Grid.Column="4" Text="ACTION" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12" Width="100" TextAlignment="Center"/>
+					</Grid>
+					<Rectangle Grid.Row="0" Height="1" Fill="#2B2B40" VerticalAlignment="Bottom"/>
+
+					<ListBox Grid.Row="1" ItemsSource="{Binding RemoteFiles}" Background="Transparent" Margin="10" DoubleTapped="OnItemDoubleTapped">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Grid ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="10,8" Background="Transparent">
+
+									<Panel Grid.Column="0" Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center">
+										<Path Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"
+											  Fill="#3E97FF"
+											  Stretch="Uniform"
+											  IsVisible="{Binding IsFolder}"/>
+
+										<Path Data="M13 9V3.5L18.5 9M6 2C4.89 2 4 2.89 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2H6Z"
+											  Fill="#A1A5B7"
+											  Stretch="Uniform"
+											  IsVisible="{Binding !IsFolder}"/>
+									</Panel>
+
+									<TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,15,0"/>
+									<TextBlock Grid.Column="2" Text="{Binding Type}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+									<TextBlock Grid.Column="3" Text="{Binding SizeFormatted}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+
+									<Button Grid.Column="4" Content="Download" Width="100" HorizontalContentAlignment="Center"
+                                            Click="OnDownloadClicked" Tag="{Binding Name}"
+                                            Background="#3E97FF" Foreground="White" CornerRadius="6"/>
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</Grid>
+			</Border>
+		</Grid>
+
+		<Border IsVisible="{Binding ShowPasswordPrompt}" Background="#CC000000" ZIndex="1000">
+			<Border Background="#1E1E2D" CornerRadius="12" Padding="30" VerticalAlignment="Center" HorizontalAlignment="Center" Width="350">
+				<StackPanel Spacing="20">
+					<TextBlock Text="Password Protected" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+					<TextBlock Text="This node requires a password to connect." Foreground="#A1A5B7" TextWrapping="Wrap" TextAlignment="Center"/>
+
+					<TextBox Text="{Binding RoomPassword}" PasswordChar="*" Watermark="Enter Password" Background="#151521" Foreground="White" HorizontalContentAlignment="Center"/>
+
+					<StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+						<Button Content="Cancel" Command="{Binding CancelPasswordCommand}" Background="#2B2B40" Foreground="White" Padding="20,10"/>
+						<Button Content="Connect" Command="{Binding SubmitPasswordAndConnectCommand}" Background="#009EF7" Foreground="White" FontWeight="Bold" Padding="20,10"/>
+					</StackPanel>
+				</StackPanel>
+			</Border>
 		</Border>
 	</Grid>
 </UserControl>

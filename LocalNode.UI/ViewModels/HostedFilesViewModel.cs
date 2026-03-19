@@ -21,7 +21,7 @@ public class HostedFileItem
     public string FileType { get; set; } = string.Empty;
     public string SizeFormatted { get; set; } = string.Empty;
     public bool IsFolder { get; set; }
-    public string Icon => IsFolder ? "📁" : "📄";
+   
 }
 
 public partial class HostedFilesViewModel : ViewModelBase

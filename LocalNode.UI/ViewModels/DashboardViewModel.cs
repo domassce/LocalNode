@@ -5,7 +5,7 @@ using LocalNode.Core.Services;
 using LocalNode.Core.Interfaces;
 using System;
 using System.IO;
-using System.IO.Compression; // <-- Required for Zipping folders!
+using System.IO.Compression; 
 using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +22,7 @@ public partial class DashboardViewModel : ViewModelBase
     private readonly SettingsViewModel _settings;
     private readonly ILogger _logger;
     private HttpListener? _listener;
+    private readonly DiscoveryService _discoveryService = new();
 
     [ObservableProperty] private int _totalFiles;
     [ObservableProperty] private string _totalSize = "0 MB";
@@ -82,15 +83,31 @@ public partial class DashboardViewModel : ViewModelBase
     private bool _isBusy = false;
 
     [RelayCommand]
-    private async Task ToggleHostingAsync() // <-- Notice this is now Async!
+    private async Task ToggleHostingAsync()
     {
         // If they are spamming the button, ignore the clicks!
         if (_isBusy) return;
 
         _isBusy = true;
 
-        if (IsHosting) StopServer();
-        else StartServer();
+        if (IsHosting)
+        {
+            StopServer();
+
+            // STOP BROADCASTING
+            _discoveryService.Stop();
+        }
+        else
+        {
+            StartServer();
+
+            // START BROADCASTING
+            // Note: Change '5050' if you are using a variable for your port (e.g., _settings.Port)
+            bool requiresPassword = !string.IsNullOrWhiteSpace(_settings.RoomPassword);
+            string nodeName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : "LocalNode User";
+
+            _discoveryService.StartAnnouncing(nodeName, 5050, requiresPassword);
+        }
 
         // Add a tiny 500-millisecond cooldown before they can click it again
         await Task.Delay(500);
@@ -111,8 +128,7 @@ public partial class DashboardViewModel : ViewModelBase
         try
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://localhost:{portStr}/");
-            _listener.Prefixes.Add($"http://127.0.0.1:{portStr}/");
+            _listener.Prefixes.Add("http://*:5050/");
             _listener.Start();
 
             IsHosting = true;
@@ -139,7 +155,7 @@ public partial class DashboardViewModel : ViewModelBase
         IsHosting = false;
         ServerStatusMessage = "Server stopped.";
 
-        // THIS IS THE FIX! Tell the UI to recalculate (which will reset to 0 since IsHosting is false)
+  
         RefreshStats();
     }
 
@@ -168,7 +184,6 @@ public partial class DashboardViewModel : ViewModelBase
                             return;
                         }
 
-                        // Read the requested relative path from the query URL
                         string requestedPath = req.QueryString["path"] ?? "";
                         string targetPhysicalPath = Path.GetFullPath(Path.Combine(_settings.DefaultHostFolder, requestedPath));
 
