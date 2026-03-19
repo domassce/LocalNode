@@ -1,0 +1,14 @@
+C:\Users\AAA\LocalNode\LocalNode.Core\bin\Debug\net8.0\LocalNode.Core.deps.json
+C:\Users\AAA\LocalNode\LocalNode.Core\bin\Debug\net8.0\LocalNode.Core.dll
+C:\Users\AAA\LocalNode\LocalNode.Core\bin\Debug\net8.0\LocalNode.Core.pdb
+C:\Users\AAA\LocalNode\LocalNode.Core\bin\Debug\net8.0\LocalNode.Core.xml
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.AssemblyInfoInputs.cache
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.AssemblyInfo.cs
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.csproj.CoreCompileInputs.cache
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.sourcelink.json
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.dll
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\refint\LocalNode.Core.dll
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.xml
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\LocalNode.Core.pdb
+C:\Users\AAA\LocalNode\LocalNode.Core\obj\Debug\net8.0\ref\LocalNode.Core.dll

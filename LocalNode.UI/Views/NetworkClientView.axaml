@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.NetworkClientView"
+             x:DataType="vm:NetworkClientViewModel">
+
+	<Grid RowDefinitions="Auto, *">
+
+		<Border Grid.Row="0" Background="#1E1E2D" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+			<StackPanel Spacing="15">
+				<TextBlock Text="Connect to Remote Server" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+
+				<Grid ColumnDefinitions="*, *, Auto">
+					<TextBox Grid.Column="0" Text="{Binding ServerUrl}" Watermark="Server URL" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
+					<TextBox Grid.Column="1" Text="{Binding RoomPassword}" PasswordChar="*" Watermark="Password (Optional)" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
+					<Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" Background="#009EF7" Foreground="White" FontWeight="Bold" Padding="20,8" CornerRadius="6"/>
+				</Grid>
+
+				<Grid ColumnDefinitions="*, Auto">
+					<TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#50CD89" FontWeight="Medium" VerticalAlignment="Center"/>
+
+					<Button Grid.Column="1" Content="⬅ Go Back" Command="{Binding NavigateUpCommand}"
+                            IsVisible="{Binding CurrentRemotePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Background="#2B2B40" Foreground="White" CornerRadius="6"/>
+				</Grid>
+			</StackPanel>
+		</Border>
+
+		<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" IsVisible="{Binding IsConnected}">
+			<Grid RowDefinitions="Auto, *">
+
+				<Grid Grid.Row="0" ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="20,15,20,10">
+					<TextBlock Grid.Column="1" Text="NAME" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="2" Text="TYPE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="3" Text="SIZE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="4" Text="ACTION" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12" Width="100" TextAlignment="Center"/>
+				</Grid>
+				<Rectangle Grid.Row="0" Height="1" Fill="#2B2B40" VerticalAlignment="Bottom"/>
+
+				<ListBox Grid.Row="1" ItemsSource="{Binding RemoteFiles}" Background="Transparent" Margin="10" DoubleTapped="OnItemDoubleTapped">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<Grid ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="10,8" Background="Transparent">
+								<TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+
+								<TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,15,0"/>
+								<TextBlock Grid.Column="2" Text="{Binding Type}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+								<TextBlock Grid.Column="3" Text="{Binding SizeFormatted}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+
+								<Button Grid.Column="4" Content="Download" Width="100" HorizontalContentAlignment="Center"
+                                        Click="OnDownloadClicked" Tag="{Binding Name}"
+                                        Background="#3E97FF" Foreground="White" CornerRadius="6"/>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</Grid>
+		</Border>
+	</Grid>
+</UserControl>
