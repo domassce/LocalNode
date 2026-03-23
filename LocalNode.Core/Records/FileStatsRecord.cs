@@ -6,5 +6,5 @@ namespace LocalNode.Core.Records
     /// A record type representing statistics about the file hosting system.
     /// Demonstrates C# 9+ Record types for immutable data transfer objects.
     /// </summary>
-    public record FileStatsRecord(int TotalFiles, long TotalSize, DateTime LastUpdated);
+    public record FileStatsRecord(int TotalFiles, long TotalSizeBytes);
 }

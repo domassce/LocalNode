@@ -9,8 +9,6 @@ public class DiscoveryService
     private const int DiscoveryPort = 9876;
     private const string Identifier = "LOCALNODE_V1";
     private CancellationTokenSource? _cts;
-
-    // Call this when 'Start Hosting' is clicked
     public void StartAnnouncing(string nodeName, int port, bool requiresPassword)
     {
         _cts = new CancellationTokenSource();
@@ -21,12 +19,10 @@ public class DiscoveryService
             while (!_cts.Token.IsCancellationRequested)
             {
                 await client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.Broadcast, DiscoveryPort));
-                await Task.Delay(3000); // Ping every 3 seconds
+                await Task.Delay(3000); 
             }
         });
     }
-
-    // Call this when opening the Network Tab
     public async Task ListenForNodes(Action<DiscoveredNode> onFound)
     {
         using var listener = new UdpClient(DiscoveryPort);

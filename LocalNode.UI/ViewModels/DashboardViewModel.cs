@@ -43,31 +43,23 @@ public partial class DashboardViewModel : ViewModelBase
         if (!IsHosting || string.IsNullOrWhiteSpace(_settings.DefaultHostFolder) || !Directory.Exists(_settings.DefaultHostFolder))
         {
             TotalFiles = 0;
-            TotalSize = "0 MB";
-            LastUpdated = "Never";
+            TotalSize = "0 B";
             return;
         }
 
         Task.Run(() =>
         {
-            try
+            var stats = _fileService.GetSystemStats(_settings.DefaultHostFolder);
+
+            Dispatcher.UIThread.Post(() =>
             {
-                var files = Directory.GetFiles(_settings.DefaultHostFolder, "*.*", SearchOption.AllDirectories);
-                long totalSize = files.Sum(f => new FileInfo(f).Length);
+                TotalFiles = stats.TotalFiles;
+                TotalSize = FormatSize(stats.TotalSizeBytes);
 
-                Dispatcher.UIThread.Post(() =>
-                {
-                    TotalFiles = files.Length;
-                    TotalSize = FormatSize(totalSize);
-
-                    // THIS IS THE ONLY LINE THAT SHOULD SET THE TIME!
-                    // If yours said 'DateTime.Now.ToString()' here, that was the bug!
-                    LastUpdated = GlobalLastActionTime == DateTime.MinValue
-                        ? "Never"
-                        : GlobalLastActionTime.ToString("HH:mm:ss");
-                });
-            }
-            catch { }
+                LastUpdated = GlobalLastActionTime == DateTime.MinValue
+                    ? "Just now"
+                    : GlobalLastActionTime.ToString("HH:mm:ss");
+            });
         });
     }
     private string FormatSize(long bytes)
@@ -79,13 +71,11 @@ public partial class DashboardViewModel : ViewModelBase
         return $"{len:0.##} {sizes[order]}";
     }
 
-    // An internal lock to prevent button spamming!
     private bool _isBusy = false;
 
     [RelayCommand]
     private async Task ToggleHostingAsync()
     {
-        // If they are spamming the button, ignore the clicks!
         if (_isBusy) return;
 
         _isBusy = true;
@@ -93,23 +83,17 @@ public partial class DashboardViewModel : ViewModelBase
         if (IsHosting)
         {
             StopServer();
-
-            // STOP BROADCASTING
             _discoveryService.Stop();
         }
         else
         {
             StartServer();
-
-            // START BROADCASTING
-            // Note: Change '5050' if you are using a variable for your port (e.g., _settings.Port)
             bool requiresPassword = !string.IsNullOrWhiteSpace(_settings.RoomPassword);
             string nodeName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : "LocalNode User";
 
             _discoveryService.StartAnnouncing(nodeName, 5050, requiresPassword);
         }
 
-        // Add a tiny 500-millisecond cooldown before they can click it again
         await Task.Delay(500);
         _isBusy = false;
     }
@@ -187,7 +171,7 @@ public partial class DashboardViewModel : ViewModelBase
                         string requestedPath = req.QueryString["path"] ?? "";
                         string targetPhysicalPath = Path.GetFullPath(Path.Combine(_settings.DefaultHostFolder, requestedPath));
 
-                        // Security check: Don't allow navigating outside the root host folder
+                        // Security check
                         if (!targetPhysicalPath.StartsWith(Path.GetFullPath(_settings.DefaultHostFolder)))
                         {
                             res.StatusCode = 403;

@@ -9,21 +9,23 @@ namespace LocalNode.Core.Extensions
     public static class FileEntityExtensions
     {
         /// <summary>
-        /// Converts the file size in bytes to a human-readable format (e.g., KB, MB, GB).
+        /// Converts the file size in bytes to a human-readable format.
         /// </summary>
         public static string ToHumanReadableSize(this IFileEntity file)
         {
-            string[] sizes = ["B", "KB", "MB", "GB", "TB"];
-            double len = file.Size;
-            int order = 0;
-            
-            while (len >= 1024 && order < sizes.Length - 1)
+            if (file == null || file.Size == 0) return "0 B";
+
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int i = 0;
+            double dblSByte = file.Size;
+
+            while (dblSByte >= 1024 && i < suffixes.Length - 1)
             {
-                order++;
-                len /= 1024;
+                dblSByte /= 1024;
+                i++;
             }
-            
-            return $"{len:0.##} {sizes[order]}";
+
+            return $"{dblSByte:0.##} {suffixes[i]}";
         }
 
         /// <summary>
@@ -31,15 +33,14 @@ namespace LocalNode.Core.Extensions
         /// </summary>
         public static string GetExtension(this IFileEntity file)
         {
-            if (string.IsNullOrWhiteSpace(file.Name)) return string.Empty;
-            
-            int lastDotIndex = file.Name.LastIndexOf('.');
-            if (lastDotIndex >= 0 && lastDotIndex < file.Name.Length - 1)
-            {
-                return file.Name[lastDotIndex..];
-            }
+            if (file == null || string.IsNullOrWhiteSpace(file.Name))
+                return string.Empty;
 
-            return string.Empty;
+            int lastDotIndex = file.Name.LastIndexOf('.');
+            if (lastDotIndex < 0 || lastDotIndex == file.Name.Length - 1)
+                return string.Empty;
+
+            return file.Name.Substring(lastDotIndex).ToLowerInvariant();
         }
     }
 }

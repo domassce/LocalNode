@@ -5,7 +5,6 @@ namespace LocalNode.Core.Enums
     /// <summary>
     /// Defines the permissions that can be applied to a file or folder.
     /// This enum uses the Flags attribute to allow bitwise combinations.
-    /// REIKALAVIMAS: Naudojamos bitinės operacijos (1 t.)
     /// </summary>
     [Flags]
     public enum FilePermissions

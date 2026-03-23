@@ -23,7 +23,7 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _defaultHostFolder = string.Empty;
     [ObservableProperty] private string _defaultPort = "5050";
     [ObservableProperty] private string _roomPassword = string.Empty;
-    [ObservableProperty] private string _logDirectory = string.Empty; // <-- New!
+    [ObservableProperty] private string _logDirectory = string.Empty;
 
     [ObservableProperty] private string _statusMessage = string.Empty;
 
@@ -46,10 +46,10 @@ public partial class SettingsViewModel : ViewModelBase
                     DefaultHostFolder = config.DefaultHostFolder ?? string.Empty;
                     DefaultPort = config.DefaultPort ?? "5050";
                     RoomPassword = config.RoomPassword ?? string.Empty;
-                    LogDirectory = config.LogDirectory ?? string.Empty; // <-- New!
+                    LogDirectory = config.LogDirectory ?? string.Empty; 
                 }
             }
-            catch { /* Ignore errors */ }
+            catch {}
         }
     }
 

@@ -1,183 +1,179 @@
-﻿using Avalonia.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using LocalNode.Core.Services;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Services;
+using LocalNode.Core.Extensions;
 
-namespace LocalNode.UI.ViewModels;
 
-public class HostedFileItem
+namespace LocalNode.UI.ViewModels
 {
-    public string FullPath { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string FileType { get; set; } = string.Empty;
-    public string SizeFormatted { get; set; } = string.Empty;
-    public bool IsFolder { get; set; }
-
-}
-
-public partial class HostedFilesViewModel : ViewModelBase
-{
-    public DashboardViewModel? Dashboard { get; set; }
-    private readonly FileHostingService _fileService;
-    public SettingsViewModel? Settings { get; set; }
-
-    [ObservableProperty] private ObservableCollection<HostedFileItem> _files = new();
-    [ObservableProperty][NotifyPropertyChangedFor(nameof(CanNavigateUp))] private string _currentLocalPath = string.Empty;
-
-    public bool CanNavigateUp =>
-        Settings != null &&
-        !string.IsNullOrEmpty(CurrentLocalPath) &&
-        !string.Equals(CurrentLocalPath.TrimEnd(Path.DirectorySeparatorChar),
-                       Settings.DefaultHostFolder.TrimEnd(Path.DirectorySeparatorChar),
-                       StringComparison.OrdinalIgnoreCase);
-
-    public HostedFilesViewModel(FileHostingService fileService)
+    public partial class HostedFileItem : ObservableObject
     {
-        _fileService = fileService;
+        [ObservableProperty] private string _name = string.Empty;
+        [ObservableProperty] private string _fileType = string.Empty;
+        [ObservableProperty] private string _sizeFormatted = string.Empty;
+        [ObservableProperty] private string _fullPath = string.Empty;
+        [ObservableProperty] private bool _isFolder;
     }
 
-    private string FormatSize(long bytes)
+    public partial class HostedFilesViewModel : ViewModelBase
     {
-        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-        double len = bytes;
-        int order = 0;
-        while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
-        return $"{len:0.##} {sizes[order]}";
-    }
+        private readonly FileHostingService _fileService;
+        public SettingsViewModel Settings { get; set; } = null!;
+        public DashboardViewModel Dashboard { get; set; } = null!;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanNavigateUp))]
+        private string _currentLocalPath = string.Empty;
 
-    private long GetDirectorySize(string folderPath)
-    {
-        try { return Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length); }
-        catch { return 0; }
-    }
+        [ObservableProperty]
+        private ObservableCollection<HostedFileItem> _files = new();
+        public bool CanNavigateUp =>
+            !string.IsNullOrEmpty(CurrentLocalPath) &&
+            Settings != null &&
+            !string.IsNullOrWhiteSpace(Settings.DefaultHostFolder) &&
+            !string.Equals(
+                CurrentLocalPath.TrimEnd(Path.DirectorySeparatorChar),
+                Settings.DefaultHostFolder.TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
 
-    [RelayCommand]
-    public void RefreshFiles()
-    {
-        if (Dashboard == null || !Dashboard.IsHosting)
+        public HostedFilesViewModel(FileHostingService fileService)
+        {
+            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+        }
+
+        [RelayCommand]
+        public void RefreshFiles()
         {
             Files.Clear();
-            return;
-        }
 
-        if (Settings == null || string.IsNullOrWhiteSpace(Settings.DefaultHostFolder) || !Directory.Exists(Settings.DefaultHostFolder))
-        {
-            Files.Clear();
-            return;
-        }
+            if (Settings == null || string.IsNullOrWhiteSpace(Settings.DefaultHostFolder) || !Directory.Exists(Settings.DefaultHostFolder))
+                return;
 
-        if (string.IsNullOrEmpty(CurrentLocalPath) || !Directory.Exists(CurrentLocalPath))
-        {
-            CurrentLocalPath = Settings.DefaultHostFolder;
-        }
+            if (string.IsNullOrEmpty(CurrentLocalPath) || !Directory.Exists(CurrentLocalPath))
+                CurrentLocalPath = Settings.DefaultHostFolder;
 
-        string folderToScan = CurrentLocalPath;
+            var folderToScan = CurrentLocalPath;
 
-
-        Task.Run(() =>
-        {
-            var newItems = new List<HostedFileItem>();
-
-            try
+            Task.Run(() =>
             {
-                // 1. Grab Subfolders and calculate their size!
+                var newItems = new System.Collections.Generic.List<HostedFileItem>();
                 foreach (var d in Directory.GetDirectories(folderToScan))
                 {
-                    long folderSize = GetDirectorySize(d);
+                    long folderSize = _fileService.GetDirectorySize(d);
                     newItems.Add(new HostedFileItem
                     {
                         FullPath = d,
                         Name = Path.GetFileName(d),
                         FileType = "Folder",
-                        SizeFormatted = FormatSize(folderSize), // NO MORE "--"
+                        SizeFormatted = FormatSize(folderSize), 
                         IsFolder = true
                     });
                 }
 
-                // 2. Grab Files
-                foreach (var f in Directory.GetFiles(folderToScan))
+                var entities = _fileService.GetFilesInDirectory(folderToScan);
+                foreach (var entity in entities)
                 {
-                    var info = new FileInfo(f);
-                    var category = FileCategorizer.Categorize(f);
                     newItems.Add(new HostedFileItem
                     {
-                        FullPath = f,
-                        Name = Path.GetFileName(f),
-                        FileType = category.GetType().Name.Replace("File", ""),
-                        SizeFormatted = FormatSize(info.Length),
+                        FullPath = Path.Combine(folderToScan, entity.Name),
+                        Name = entity.Name,
+                        FileType = entity.GetType().Name.Replace("File", ""),
+                        SizeFormatted = LocalNode.Core.Extensions.FileEntityExtensions.ToHumanReadableSize(entity),
+
                         IsFolder = false
                     });
                 }
-            }
-            catch { }
-
-            Dispatcher.UIThread.Post(() =>
-            {
-                Files.Clear();
-                foreach (var item in newItems) Files.Add(item);
+                Dispatcher.UIThread.Post(() =>
+                {
+                    foreach (var item in newItems)
+                    {
+                        Files.Add(item);
+                    }
+                    OnPropertyChanged(nameof(CanNavigateUp));
+                });
             });
-        });
-    }
-
-    public void NavigateIntoFolder(string folderName)
-    {
-        var newPath = Path.Combine(CurrentLocalPath, folderName);
-        if (Directory.Exists(newPath))
-        {
-            CurrentLocalPath = newPath;
-            RefreshFiles();
         }
-    }
 
-    [RelayCommand]
-    public void NavigateUp()
-    {
-        if (!CanNavigateUp) return;
-        var parentPath = Path.GetDirectoryName(CurrentLocalPath);
-        if (!string.IsNullOrEmpty(parentPath))
+        public void NavigateIntoFolder(string folderName)
         {
-            CurrentLocalPath = parentPath;
-            RefreshFiles();
+            var newPath = Path.Combine(CurrentLocalPath, folderName);
+            if (Directory.Exists(newPath))
+            {
+                CurrentLocalPath = newPath;
+                RefreshFiles();
+            }
         }
-    }
 
-    [RelayCommand]
-    public void OpenFile(string fullPath)
-    {
-        if (System.IO.File.Exists(fullPath) || Directory.Exists(fullPath))
-            Process.Start(new ProcessStartInfo { FileName = fullPath, UseShellExecute = true });
-    }
-
-    [RelayCommand]
-    public void DeleteFile(string fullPath)
-    {
-        try
+        [RelayCommand]
+        public void NavigateUp()
         {
-            // Explicitly using System.IO.File and System.IO.Directory
-            if (System.IO.File.Exists(fullPath)) System.IO.File.Delete(fullPath);
-            else if (System.IO.Directory.Exists(fullPath)) System.IO.Directory.Delete(fullPath, true);
+            if (!CanNavigateUp) return;
 
-            DashboardViewModel.GlobalLastActionTime = DateTime.Now;
-            RefreshFiles();
+            var parentPath = Path.GetDirectoryName(CurrentLocalPath);
+            if (!string.IsNullOrEmpty(parentPath))
+            {
+                CurrentLocalPath = parentPath;
+                RefreshFiles();
+            }
         }
-        catch { }
-    }
 
-    public void AddPhysicalFile(string sourceFilePath)
-    {
-        if (string.IsNullOrEmpty(CurrentLocalPath)) return;
-        var destPath = System.IO.Path.Combine(CurrentLocalPath, System.IO.Path.GetFileName(sourceFilePath));
+        [RelayCommand]
+        public void OpenFile(string fullPath)
+        {
+            if (!_fileService.CanReadFile(fullPath))
+            {
+                return;
+            }
+            if (File.Exists(fullPath) || Directory.Exists(fullPath))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = fullPath,
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                }
+            }
+        }
+        [RelayCommand]
+        public void DeleteFile(string fullPath)
+        {
+            if (_fileService.DeletePhysicalFile(fullPath))
+            {
+                RefreshFiles();
+                Dashboard?.RefreshStats();
+            }
+        }
 
-        if (!System.IO.File.Exists(destPath)) System.IO.File.Copy(sourceFilePath, destPath);
+        public void AddPhysicalFile(string sourceFilePath)
+        {
+            if (string.IsNullOrEmpty(CurrentLocalPath)) return;
+            _fileService.AddPhysicalFiles(CurrentLocalPath, sourceFilePath);
+            RefreshFiles();
+            Dashboard?.RefreshStats();
+        }
 
-        DashboardViewModel.GlobalLastActionTime = DateTime.Now;
-        RefreshFiles();
+        private string FormatSize(long bytes)
+        {
+            if (bytes == 0) return "0 B";
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int i = 0;
+            double dblSByte = bytes;
+            while (dblSByte >= 1024 && i < suffixes.Length - 1)
+            {
+                dblSByte /= 1024;
+                i++;
+            }
+            return $"{dblSByte:0.##} {suffixes[i]}";
+        }
     }
 }

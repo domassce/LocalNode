@@ -6,10 +6,6 @@ namespace LocalNode.Core.Models
 {
     /// <summary>
     /// Represents a document file (e.g., PDF, Word, Text).
-    /// REIKALAVIMAS: Naudojate uždarytą ('sealed') klasę (0.5 t.)
-    /// REIKALAVIMAS: Teisingai atlikote implementaciją IComparable&lt;T&gt; (0.5 t.)
-    /// REIKALAVIMAS: Teisingai atlikote implementaciją IEquatable&lt;T&gt; (0.5 t.)
-    /// REIKALAVIMAS: Teisingai atlikote implementaciją IFormattable (1 t.)
     /// </summary>
     [FileCategory("Document")]
     public sealed class DocumentFile : FileEntity, IComparable<DocumentFile>, IEquatable<DocumentFile>, IFormattable
@@ -17,9 +13,7 @@ namespace LocalNode.Core.Models
         public string Author { get; set; }
         public int WordCount { get; set; }
 
-        /// <summary>
-        /// REIKALAVIMAS: Naudojami numatyti argumentai (0.5 t.)
-        /// </summary>
+
         public DocumentFile(string name, long size, string author = "Unknown") : base(name, size)
         {
             Author = author;
@@ -67,9 +61,6 @@ namespace LocalNode.Core.Models
         #endregion
 
         #region Deconstructor
-        /// <summary>
-        /// REIKALAVIMAS: Naudojamas dekonstruktorius (0.5 t.)
-        /// </summary>
         public void Deconstruct(out string name, out long size, out string author, out int wordCount)
         {
             name = Name;
@@ -80,9 +71,6 @@ namespace LocalNode.Core.Models
         #endregion
 
         #region Operator Overloading
-        /// <summary>
-        /// REIKALAVIMAS: Naudojamas operatorių perkrovimas (0.5 t.)
-        /// </summary>
         public static bool operator ==(DocumentFile? left, DocumentFile? right)
         {
             if (ReferenceEquals(left, null)) return ReferenceEquals(right, null);

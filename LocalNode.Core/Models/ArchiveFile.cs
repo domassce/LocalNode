@@ -1,3 +1,4 @@
+﻿using System;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,29 +12,21 @@ namespace LocalNode.Core.Models
     /// Demonstrates implementing IEnumerable for custom iteration.
     /// </summary>
     [FileCategory("Archive")]
-    public class ArchiveFile : FileEntity, IEnumerable<IFileEntity>
+    public sealed class ArchiveFile : FileEntity, IEnumerable<IFileEntity>
     {
         private readonly List<IFileEntity> _archivedFiles = new();
 
         public int FileCount => _archivedFiles.Count;
 
-        public ArchiveFile(string name) : base(name, 0)
-        {
-        }
-
         public ArchiveFile(string name, long size) : base(name, size)
         {
         }
 
-        /// <summary>
-        /// Adds a file to the archive and updates the total size.
-        /// </summary>
         public void AddFile(IFileEntity file)
         {
             if (file == null) throw new ArgumentNullException(nameof(file));
-            
             _archivedFiles.Add(file);
-            Size += file.Size; // Archive size grows with its contents
+            Size += file.Size;
         }
 
         public override void Open()
@@ -45,17 +38,7 @@ namespace LocalNode.Core.Models
             }
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the archived files.
-        /// </summary>
-        public IEnumerator<IFileEntity> GetEnumerator()
-        {
-            return _archivedFiles.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        public IEnumerator<IFileEntity> GetEnumerator() => _archivedFiles.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

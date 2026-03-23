@@ -7,7 +7,6 @@ namespace LocalNode.Core.Models
 {
     /// <summary>
     /// Base abstract class for all file types in the system.
-    /// REIKALAVIMAS: Naudojate abstrakčią klasę (0.5 t.)
     /// </summary>
     [FileCategory("Generic")]
     public abstract class FileEntity : IFileEntity
@@ -21,7 +20,6 @@ namespace LocalNode.Core.Models
         protected FileEntity(string name, long size)
         {
             Id = Guid.NewGuid();
-            // REIKALAVIMAS: Naudojami operatoriai ?? (0.5 t.)
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Size = size;
             CreatedAt = DateTime.UtcNow;

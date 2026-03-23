@@ -5,7 +5,6 @@ namespace LocalNode.Core.Interfaces
 {
     /// <summary>
     /// Represents a generic file entity in the hosting system.
-    /// REIKALAVIMAS: Sukūrėte ir pritaikėte savo sąsają (interface) (0.5 t.)
     /// </summary>
     public interface IFileEntity
     {

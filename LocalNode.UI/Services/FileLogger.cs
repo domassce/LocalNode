@@ -8,9 +8,7 @@ namespace LocalNode.UI.Services;
 public class FileLogger : ILogger
 {
     private readonly SettingsViewModel _settings;
-    private readonly object _lockObj = new(); // Prevents multiple threads from writing at the exact same millisecond
-
-    // We pass the SettingsViewModel in so the logger always knows the latest directory!
+    private readonly object _lockObj = new(); 
     public FileLogger(SettingsViewModel settings)
     {
         _settings = settings;
@@ -18,7 +16,6 @@ public class FileLogger : ILogger
 
     private string GetLogFilePath()
     {
-        // If the user hasn't set a log directory, save it right next to the .exe file
         string dir = string.IsNullOrWhiteSpace(_settings.LogDirectory)
             ? AppDomain.CurrentDomain.BaseDirectory
             : _settings.LogDirectory;

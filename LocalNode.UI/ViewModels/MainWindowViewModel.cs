@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalNode.Core.Services;
-using LocalNode.Core.Storage;
 using LocalNode.UI.Services;
 
 namespace LocalNode.UI.ViewModels;
@@ -25,8 +24,7 @@ public partial class MainWindowViewModel : ViewModelBase
         UserName = _settingsViewModel.DisplayName;
 
         var logger = new FileLogger(_settingsViewModel);
-        var storage = new LocalStorageProvider(long.MaxValue);
-        _fileService = new FileHostingService(logger, storage);
+        _fileService = new FileHostingService(logger);
 
         _dashboardViewModel = new DashboardViewModel(_fileService, _settingsViewModel, logger);
         _hostedFilesViewModel = new HostedFilesViewModel(_fileService)

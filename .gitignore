@@ -21,3 +21,10 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
+/LocalNode.Core/Models/ArchiveFile.cs
+/LocalNode.Core/Models/UnknownFile.cs
+/LocalNode.Core/Logging/ConsoleLogger.cs
+/LocalNode.Core/Enums/StorageType.cs
+/LocalNode.Core/Exceptions/FileHostingException.cs
+/LocalNode.Core/Exceptions/StorageFullException.cs
+/LocalNode.Core/Exceptions/UnauthorizedFileAccessException.cs
