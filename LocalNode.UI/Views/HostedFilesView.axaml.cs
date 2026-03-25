@@ -35,7 +35,6 @@ public partial class HostedFilesView : UserControl
         }
     }
 
-    // NEW DOUBLE CLICK LOGIC!
     private void OnItemDoubleTapped(object? sender, TappedEventArgs e)
     {
         if (sender is ListBox listBox && listBox.SelectedItem is HostedFileItem item)

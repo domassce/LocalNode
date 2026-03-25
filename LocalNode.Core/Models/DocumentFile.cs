@@ -42,7 +42,6 @@ namespace LocalNode.Core.Models
             return this.Id == other.Id;
         }
         public override bool Equals(object? obj) => Equals(obj as DocumentFile);
-        public override int GetHashCode() => Id.GetHashCode();
         #endregion
 
         #region IFormattable Implementation
@@ -61,6 +60,9 @@ namespace LocalNode.Core.Models
         #endregion
 
         #region Deconstructor
+
+
+
         public void Deconstruct(out string name, out long size, out string author, out int wordCount)
         {
             name = Name;

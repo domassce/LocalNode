@@ -12,6 +12,7 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+
 namespace LocalNode.UI.ViewModels;
 
 public partial class DashboardViewModel : ViewModelBase
@@ -91,7 +92,14 @@ public partial class DashboardViewModel : ViewModelBase
             bool requiresPassword = !string.IsNullOrWhiteSpace(_settings.RoomPassword);
             string nodeName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : "LocalNode User";
 
-            _discoveryService.StartAnnouncing(nodeName, 5050, requiresPassword);
+            if (int.TryParse(_settings.DefaultPort, out int customPort))
+            {
+                _discoveryService.StartAnnouncing(nodeName, customPort, requiresPassword);
+            }
+            else
+            {
+                _discoveryService.StartAnnouncing(nodeName, 5050, requiresPassword);
+            }
         }
 
         await Task.Delay(500);
@@ -112,14 +120,19 @@ public partial class DashboardViewModel : ViewModelBase
         try
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add("http://*:5050/");
+            _listener.Prefixes.Add($"http://+:{portStr}/");
             _listener.Start();
 
             IsHosting = true;
             GlobalLastActionTime = DateTime.Now;
             ServerStatusMessage = $"Hosting on port {portStr}...";
             _logger.LogInfo($"[Server] Started hosting on port {portStr}. Folder: {folder}");
-
+            var files = Directory.GetFiles(folder);
+            foreach (var filePath in files)
+            {
+                var entity = FileCategorizer.Categorize(filePath);
+                _fileService.ProcessFileEntity(entity);
+            }
             Task.Run(ListenLoop);
             RefreshStats();
         }
@@ -150,7 +163,7 @@ public partial class DashboardViewModel : ViewModelBase
             try
             {
                 var context = await _listener.GetContextAsync();
-
+                _logger.LogInfo("Gauta užklausa");
                 _ = Task.Run(async () =>
                 {
                     var req = context.Request;

@@ -15,7 +15,9 @@ namespace LocalNode.Core.Models
         public string Name { get; protected set; }
         public long Size { get; protected set; }
         public DateTime CreatedAt { get; protected set; }
+        public string ShortName => Name.Length > 10 ? Name[..10] + "..." : Name;
         public FilePermissions Permissions { get; set; }
+
 
         protected FileEntity(string name, long size)
         {

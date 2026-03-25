@@ -26,8 +26,7 @@ public static class FileCategorizer
                 => new ArchiveFile(info.Name, info.Length),
             ".pdf" or ".docx" or ".doc" or ".txt" or ".xlsx" or ".csv"
                 => new DocumentFile(name: info.Name, size: info.Length, author: "System"),
-            _
-                => new UnknownFile(info.Name, info.Length)
-        };
+              _ => new UnknownFile(info.Name, info.Length)
+        };  
     }
 }

@@ -20,7 +20,7 @@ public class FileLogger : ILogger
             ? AppDomain.CurrentDomain.BaseDirectory
             : _settings.LogDirectory;
 
-        return Path.Combine(dir, "LocalFileHost_Logs.txt");
+        return Path.Combine(dir, "Log.txt");
     }
 
     private void WriteToFile(string level, string message, Exception? ex = null)
@@ -47,9 +47,9 @@ public class FileLogger : ILogger
         }
     }
 
-    public void LogInfo(string message) => WriteToFile("INFO", message);
+    public void LogInfo(string message) => WriteToFile(level: "INFO", message: message);
 
-    public void LogWarning(string message) => WriteToFile("WARN", message);
+    public void LogWarning(string message) => WriteToFile(level: "WARN", message: message);
 
-    public void LogError(string message, Exception? ex = null) => WriteToFile("ERROR", message, ex);
+    public void LogError(string message, Exception? ex = null) => WriteToFile(level: "ERROR", message: message, ex: ex);
 }

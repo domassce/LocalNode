@@ -81,7 +81,7 @@ namespace LocalNode.UI.ViewModels
                     newItems.Add(new HostedFileItem
                     {
                         FullPath = Path.Combine(folderToScan, entity.Name),
-                        Name = entity.Name,
+                        Name = entity.ShortName,
                         FileType = entity.GetType().Name.Replace("File", ""),
                         SizeFormatted = LocalNode.Core.Extensions.FileEntityExtensions.ToHumanReadableSize(entity),
 

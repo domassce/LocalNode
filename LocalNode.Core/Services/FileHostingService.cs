@@ -108,30 +108,26 @@ namespace LocalNode.Core.Services
         }
 
 
-        public void AnalyzeDirectory(string folderPath)
+        public void ProcessFileEntity(IFileEntity entity)
         {
-            var files = GetFilesInDirectory(folderPath).ToList();
-
-            foreach (var file in files)
+            if (entity is DocumentFile doc)
             {
-                if (file is DocumentFile doc)
-                {
-                    _logger.LogInfo($"Found Document: {doc.Name}");
-                }
+                var (name, size, author, wordCount) = doc;
 
+                _logger.LogInfo($"Processing document: {doc:S}");
 
-                switch (file)
+                if (wordCount > 500)
                 {
-                    case MediaFile media when media.Size > 1024 * 1024 * 50:
-                        _logger.LogWarning($"HUGE Media File: {media.Name}");
-                        break;
-                    case ArchiveFile archive when archive.Size < 1024:
-                        _logger.LogInfo($"Tiny Archive detected: {archive.Name}");
-                        break;
-                    case DocumentFile { WordCount: > 0 } largeDoc:
-                        _logger.LogInfo($"Document with mapped words: {largeDoc.Name}");
-                        break;
+                    _logger.LogWarning($"Long document detected: {name} by {author}");
                 }
+            }
+            else if (entity is MediaFile media && media.Size > 104857600)
+            {
+                _logger.LogWarning($"Large media detected: {media.Name}");
+            }
+            else
+            {
+                _logger.LogInfo($"Handled entity: {entity.Name}");
             }
         }
 

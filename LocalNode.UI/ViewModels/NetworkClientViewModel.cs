@@ -38,7 +38,7 @@ public class RemoteFileItem
 
 public partial class NetworkClientViewModel : ViewModelBase
 {
-    private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
+    private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly SettingsViewModel _settings;
     private readonly DiscoveryService _discoveryService = new();
@@ -74,7 +74,7 @@ public partial class NetworkClientViewModel : ViewModelBase
         }));
         _ = Task.Run(async () =>
         {
-            await Task.Delay(3000); // Wait 3 seconds
+            await Task.Delay(3000); 
 
             Dispatcher.UIThread.Post(() =>
             {

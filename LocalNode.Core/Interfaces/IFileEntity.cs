@@ -33,5 +33,7 @@ namespace LocalNode.Core.Interfaces
         /// Opens the file entity for viewing or processing.
         /// </summary>
         void Open();
+
+        string ShortName { get; }
     }
 }
