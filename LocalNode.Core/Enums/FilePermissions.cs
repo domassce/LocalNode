@@ -12,6 +12,7 @@ namespace LocalNode.Core.Enums
         /// <summary>No permissions granted.</summary>
         None = 0,
 
+        //REIKALAVIMAS
         /// <summary>Permission to read the file.</summary>
         Read = 1 << 0,
 

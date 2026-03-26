@@ -6,6 +6,7 @@ namespace LocalNode.Core.Interfaces
     /// <summary>
     /// Represents a generic file entity in the hosting system.
     /// </summary>
+    /// REIKALAVIMAS
     public interface IFileEntity
     {
         /// <summary>Gets the unique identifier for the file.</summary>

@@ -31,7 +31,7 @@ namespace LocalNode.Core.Models
 
         public override void Open()
         {
-            Console.WriteLine($"[Archive] Opening archive '{Name}'. Contains {FileCount} files. Total Size: {Size} bytes.");
+          
             foreach (var file in _archivedFiles)
             {
                 Console.WriteLine($"   |- {file.Name} ({file.Size} bytes)");

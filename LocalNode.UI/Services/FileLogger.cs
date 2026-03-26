@@ -46,7 +46,7 @@ public class FileLogger : ILogger
             }
         }
     }
-
+    //REIKALAVIMAS
     public void LogInfo(string message) => WriteToFile(level: "INFO", message: message);
 
     public void LogWarning(string message) => WriteToFile(level: "WARN", message: message);

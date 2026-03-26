@@ -30,7 +30,6 @@ public partial class SettingsView : UserControl
         }
     }
 
-    // NEW METHOD FOR LOG FOLDER
     private async void OnBrowseLogFolderClicked(object? sender, RoutedEventArgs e)
     {
         var topLevel = TopLevel.GetTopLevel(this);
@@ -40,6 +39,7 @@ public partial class SettingsView : UserControl
 
         if (folders.Count > 0)
         {
+            //REIKALAVIMAS
             if (DataContext is SettingsViewModel vm)
             {
                 vm.LogDirectory = folders.First().Path.LocalPath;

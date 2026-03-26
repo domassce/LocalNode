@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
 using LocalNode.Core.Services;
 using System;
 using System.Collections.Generic;
@@ -116,7 +117,6 @@ public partial class DashboardViewModel : ViewModelBase
             ServerStatusMessage = "Please set a valid Hosting Folder in Settings!";
             return;
         }
-
         try
         {
             _listener = new HttpListener();
@@ -127,12 +127,23 @@ public partial class DashboardViewModel : ViewModelBase
             GlobalLastActionTime = DateTime.Now;
             ServerStatusMessage = $"Hosting on port {portStr}...";
             _logger.LogInfo($"[Server] Started hosting on port {portStr}. Folder: {folder}");
+
             var files = Directory.GetFiles(folder);
+            //REIKALAVIMAS 
+            List<DocumentFile> docs = files.Select(f => FileCategorizer.Categorize(f)).OfType<DocumentFile>().ToList();
+            docs.Sort();
+
+            foreach (var doc in docs)
+            {
+                _logger.LogInfo($"Sorted document: {doc:S}");
+            }
+
             foreach (var filePath in files)
             {
                 var entity = FileCategorizer.Categorize(filePath);
                 _fileService.ProcessFileEntity(entity);
             }
+
             Task.Run(ListenLoop);
             RefreshStats();
         }
@@ -168,6 +179,7 @@ public partial class DashboardViewModel : ViewModelBase
                 {
                     var req = context.Request;
                     var res = context.Response;
+                    //REIKALAVIMAS
                     string clientIp = req.RemoteEndPoint?.ToString() ?? "Unknown IP";
                     string clientName = req.Headers["X-User-Name"] ?? "Anonymous Client";
 

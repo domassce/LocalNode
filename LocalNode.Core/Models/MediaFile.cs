@@ -20,7 +20,6 @@ namespace LocalNode.Core.Models
 
         public override void Open()
         {
-            Console.WriteLine($"[Player] Playing media: '{Name}'. Duration: {Duration.TotalMinutes:F2} mins. Resolution: {Resolution}");
         }
     }
 }

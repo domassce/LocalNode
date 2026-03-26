@@ -77,7 +77,7 @@ namespace LocalNode.Core.Services
             return false;
         }
 
-
+        //REIKALAVIMAS
         public bool TryGetPhysicalFile(string filePath, out IFileEntity fileEntity)
         {
             if (File.Exists(filePath))
@@ -110,24 +110,44 @@ namespace LocalNode.Core.Services
 
         public void ProcessFileEntity(IFileEntity entity)
         {
+
+            //REIKALAVIMAS
+            switch (entity)
+            {
+                case DocumentFile largeDoc when largeDoc.Size > 1048576:
+                    _logger.LogWarning($"Large document: {largeDoc.Name}");
+                    break;
+                case DocumentFile regularDoc:
+                    _logger.LogInfo($"Document: {regularDoc.Name}");
+                    break;
+                case MediaFile media when media.Duration.TotalMinutes > 60:
+                    _logger.LogWarning($"Long media file detected: {media.Name}");
+                    break;
+            }
+            ///REIKALAVIMAS
             if (entity is DocumentFile doc)
             {
+                //REIKALAVIMAS
                 var (name, size, author, wordCount) = doc;
-
-                _logger.LogInfo($"Processing document: {doc:S}");
-
-                if (wordCount > 500)
+                //REIKALAVIMAS
+                _logger.LogInfo($"Categorized: {doc:S}");
+                
+                DocumentFile template = new DocumentFile("Template.docx", 0, "System");
+                //REIKALAVIMAS
+                if (doc == template)
                 {
-                    _logger.LogWarning($"Long document detected: {name} by {author}");
+                    _logger.LogWarning($"Duplicate detected: {name}");
                 }
-            }
-            else if (entity is MediaFile media && media.Size > 104857600)
-            {
-                _logger.LogWarning($"Large media detected: {media.Name}");
+
+                if (wordCount > 0)
+                {
+                    DocumentFile combined = doc + template;
+                    _logger.LogInfo($"Combined stats: {combined:N}");
+                }
             }
             else
             {
-                _logger.LogInfo($"Handled entity: {entity.Name}");
+                _logger.LogInfo($"Entity: {entity.Name}");
             }
         }
 

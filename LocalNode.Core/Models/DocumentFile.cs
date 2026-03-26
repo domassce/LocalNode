@@ -7,9 +7,16 @@ namespace LocalNode.Core.Models
     /// <summary>
     /// Represents a document file (e.g., PDF, Word, Text).
     /// </summary>
+    
+   
     [FileCategory("Document")]
     public sealed class DocumentFile : FileEntity, IComparable<DocumentFile>, IEquatable<DocumentFile>, IFormattable
-    {
+    { 
+        static DocumentFile()
+        {
+
+        }
+
         public string Author { get; set; }
         public int WordCount { get; set; }
 
@@ -23,7 +30,7 @@ namespace LocalNode.Core.Models
         {
             Console.WriteLine($"[Viewer] Opening document: '{Name}' authored by {Author}. Size: {Size} bytes.");
         }
-
+        //REIKALAVIMAS
         #region IComparable<T> Implementation
         public int CompareTo(DocumentFile? other)
         {
@@ -33,7 +40,7 @@ namespace LocalNode.Core.Models
             return string.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase);
         }
         #endregion
-
+        //REIKALAVIMAS
         #region IEquatable<T> Implementation
         public bool Equals(DocumentFile? other)
         {
@@ -43,7 +50,7 @@ namespace LocalNode.Core.Models
         }
         public override bool Equals(object? obj) => Equals(obj as DocumentFile);
         #endregion
-
+        //REIKALAVIMAS
         #region IFormattable Implementation
         public string ToString(string? format, IFormatProvider? formatProvider)
         {
@@ -58,11 +65,8 @@ namespace LocalNode.Core.Models
             }
         }
         #endregion
-
+        //REIKALAVIMAS
         #region Deconstructor
-
-
-
         public void Deconstruct(out string name, out long size, out string author, out int wordCount)
         {
             name = Name;
@@ -71,7 +75,7 @@ namespace LocalNode.Core.Models
             wordCount = WordCount;
         }
         #endregion
-
+        //REIKALAVIMAS
         #region Operator Overloading
         public static bool operator ==(DocumentFile? left, DocumentFile? right)
         {

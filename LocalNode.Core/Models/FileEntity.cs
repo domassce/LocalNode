@@ -9,6 +9,7 @@ namespace LocalNode.Core.Models
     /// Base abstract class for all file types in the system.
     /// </summary>
     [FileCategory("Generic")]
+    //REIKALAVIMAS
     public abstract class FileEntity : IFileEntity
     {
         public Guid Id { get; protected set; }

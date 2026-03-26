@@ -94,6 +94,7 @@ public partial class NetworkClientViewModel : ViewModelBase
         {
             request.Headers.Add("X-Room-Password", RoomPassword);
         }
+        //REIKAKLAVIMAS
         string safeUserName = string.IsNullOrWhiteSpace(_settings.DisplayName) ? "Anonymous" : _settings.DisplayName;
         request.Headers.Add("X-User-Name", safeUserName);
     }
@@ -244,6 +245,7 @@ public partial class NetworkClientViewModel : ViewModelBase
             }
             catch
             {
+                //REIKALAVIMAS
                 Dispatcher.UIThread.Post(() =>
                 {
                     if (IsConnected)
