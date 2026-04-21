@@ -1,11 +1,13 @@
+using LocalNode.Core.Enums;
+using LocalNode.Core.Exceptions;
+using LocalNode.Core.Extensions;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
+using LocalNode.Core.Records;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using LocalNode.Core.Interfaces;
-using LocalNode.Core.Models;
-using LocalNode.Core.Enums;
-using LocalNode.Core.Records;
 namespace LocalNode.Core.Services
 {
     public class FileHostingService
@@ -17,21 +19,27 @@ namespace LocalNode.Core.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _logger.LogInfo("[System] FileHostingService instance initialized.");
         }
+        //REIKALAVIMAS
+        public event EventHandler<IFileEntity>? OnFileScanned;
 
-
-        public IEnumerable<IFileEntity> GetFilesInDirectory(string folderPath)
+        public NodeFileCollection<IFileEntity> GetFilesInDirectory(string folderPath)
         {
-            if (!Directory.Exists(folderPath)) return Enumerable.Empty<IFileEntity>();
+            //REIKALAVIMAS
+            if (!Directory.Exists(folderPath))
+                throw new NodeDirectoryNotFoundException(folderPath);
 
+            //REIKALAVIMAS
+            var entities = new NodeFileCollection<IFileEntity>();
             var files = Directory.GetFiles(folderPath);
-            var entities = new List<IFileEntity>();
 
             foreach (var f in files)
             {
-                entities.Add(FileCategorizer.Categorize(f));
-            }
+                var entity = FileCategorizer.Categorize(f);
+                entities.Add(entity);
 
-            _lastScanTime = DateTime.Now;
+                //REIKALAVIMAS
+                OnFileScanned?.Invoke(this, entity);
+            }
             return entities;
         }
 
@@ -110,6 +118,8 @@ namespace LocalNode.Core.Services
 
         public void ProcessFileEntity(IFileEntity entity)
         {
+            //REIKALAVIMAS
+            entity.LogEntityAction(_logger, "PROCESS");
 
             //REIKALAVIMAS
             switch (entity)
@@ -181,5 +191,6 @@ namespace LocalNode.Core.Services
 
             return new FileStatsRecord(files.Length, totalSize);
         }
+
     } 
 }

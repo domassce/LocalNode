@@ -28,10 +28,4 @@
   <ItemGroup>
     <ProjectReference Include="..\LocalNode.Core\LocalNode.Core.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="LocalNode.Core">
-      <HintPath>..\LocalNode.Core\bin\Debug\net8.0\LocalNode.Core.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 </Project>

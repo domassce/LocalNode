@@ -1,14 +1,18 @@
-﻿using System;
+﻿using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Exceptions;
+using LocalNode.Core.Extensions;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
+using LocalNode.Core.Services;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using Avalonia.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using LocalNode.Core.Services;
-using LocalNode.Core.Extensions;
-
 
 namespace LocalNode.UI.ViewModels
 {
@@ -61,32 +65,36 @@ namespace LocalNode.UI.ViewModels
 
             Task.Run(() =>
             {
-                var newItems = new System.Collections.Generic.List<HostedFileItem>();
-                foreach (var d in Directory.GetDirectories(folderToScan))
+                var newItems = new List<HostedFileItem>();
+                string folderToScan = string.IsNullOrEmpty(CurrentLocalPath) ? Settings.DefaultHostFolder : CurrentLocalPath;
+
+                try
                 {
-                    long folderSize = _fileService.GetDirectorySize(d);
-                    newItems.Add(new HostedFileItem
+                    foreach (var d in Directory.GetDirectories(folderToScan)) { /* jūsų esamas kodas */ }
+
+                    //REIKALAVIMAS
+                    NodeFileCollection<IFileEntity> entities = _fileService.GetFilesInDirectory(folderToScan);
+
+                    //REIKALAVIMAS
+                    var bigFiles = entities.GetLargeFiles(1024 * 1024).ToList();
+                    if (bigFiles.Any()) Console.WriteLine($"Found {bigFiles.Count} large files using yield iterator.");
+
+                    foreach (var entity in entities)
                     {
-                        FullPath = d,
-                        Name = Path.GetFileName(d),
-                        FileType = "Folder",
-                        SizeFormatted = FormatSize(folderSize), 
-                        IsFolder = true
-                    });
+                        newItems.Add(new HostedFileItem
+                        {
+                            Name = entity.Name,
+                            FullPath = Path.Combine(folderToScan, entity.Name),
+                            FileType = entity.GetType().Name.Replace("File", ""),
+                            SizeFormatted = LocalNode.Core.Extensions.FileEntityExtensions.ToHumanReadableSize(entity),
+                            IsFolder = false
+                        });
+                    }
                 }
-
-                var entities = _fileService.GetFilesInDirectory(folderToScan);
-                foreach (var entity in entities)
+                //REIKALAVIMAS
+                catch (NodeDirectoryNotFoundException ex)
                 {
-                    newItems.Add(new HostedFileItem
-                    {
-                        FullPath = Path.Combine(folderToScan, entity.Name),
-                        Name = entity.ShortName,
-                        FileType = entity.GetType().Name.Replace("File", ""),
-                        SizeFormatted = LocalNode.Core.Extensions.FileEntityExtensions.ToHumanReadableSize(entity),
-
-                        IsFolder = false
-                    });
+                    Console.WriteLine($"UI caught an exception: {ex.MissingPath}");
                 }
                 Dispatcher.UIThread.Post(() =>
                 {

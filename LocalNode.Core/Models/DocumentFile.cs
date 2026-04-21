@@ -84,14 +84,20 @@ namespace LocalNode.Core.Models
         }
         public static bool operator !=(DocumentFile? left, DocumentFile? right) => !(left == right);
 
+        //REIKALAVIMAS
+        public object Clone() => new DocumentFile(Name, Size, Author);
+
         public static DocumentFile operator +(DocumentFile left, DocumentFile right)
         {
             if (left == null || right == null) throw new ArgumentNullException("Cannot add null documents.");
-            return new DocumentFile($"{left.Name}_{right.Name}", left.Size + right.Size, $"{left.Author} & {right.Author}")
-            {
-                WordCount = left.WordCount + right.WordCount
-            };
-        }
+
+            //REIKALAVIMAS
+            var clonedLeft = (DocumentFile)left.Clone();
+
+            return new DocumentFile($"{clonedLeft.Name}_{right.Name}", clonedLeft.Size + right.Size, $"{clonedLeft.Author} & {right.Author}");
+        }   
         #endregion
+
+
     }
 }

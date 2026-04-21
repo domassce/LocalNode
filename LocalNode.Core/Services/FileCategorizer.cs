@@ -1,7 +1,8 @@
-using System;
-using System.IO;
+using LocalNode.Core.Extensions;
 using LocalNode.Core.Interfaces;
 using LocalNode.Core.Models;
+using System;
+using System.IO;
 
 namespace LocalNode.Core.Services;
 
@@ -16,17 +17,18 @@ public static class FileCategorizer
     public static IFileEntity Categorize(string filePath)
     {
         var info = new FileInfo(filePath);
+
+        //REIKALAVIMAS
+        var (fileName, fileSize) = info;
+
         var ext = info.Extension.ToLowerInvariant();
 
         return ext switch
         {
-            ".mp4" or ".avi" or ".mkv" or ".webm" or ".mp3" or ".wav" or ".flac"
-                => new MediaFile(info.Name, info.Length, TimeSpan.Zero),
-            ".zip" or ".rar" or ".7z" or ".tar" or ".gz"
-                => new ArchiveFile(info.Name, info.Length),
-            ".pdf" or ".docx" or ".doc" or ".txt" or ".xlsx" or ".csv"
-                => new DocumentFile(name: info.Name, size: info.Length, author: "System"),
-              _ => new UnknownFile(info.Name, info.Length)
-        };  
+            ".mp4" or ".mp3" => new MediaFile(fileName, fileSize, TimeSpan.Zero),
+            ".zip" or ".rar" => new ArchiveFile(fileName, fileSize),
+            ".pdf" or ".docx" or ".txt" => new DocumentFile(fileName, fileSize, "System"),
+            _ => new UnknownFile(fileName, fileSize)
+        };
     }
 }

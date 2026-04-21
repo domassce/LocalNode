@@ -2,6 +2,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalNode.Core.Services;
+using LocalNode.Core.Database;
+using LocalNode.Core.Extensions;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -10,6 +12,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
 
 namespace LocalNode.UI.ViewModels;
 
@@ -218,9 +221,12 @@ public partial class NetworkClientViewModel : ViewModelBase
     public async Task NavigateUp()
     {
         if (string.IsNullOrEmpty(CurrentRemotePath)) return;
-
         var parentPath = Path.GetDirectoryName(CurrentRemotePath) ?? string.Empty;
-        await LoadFilesFromPath(parentPath);
+
+        //REIKALAVIMAS
+        CurrentRemotePath = parentPath.SanitizePath();
+
+        await LoadFilesFromPath(CurrentRemotePath);
     }
 
     private void Disconnect()
@@ -281,6 +287,11 @@ public partial class NetworkClientViewModel : ViewModelBase
             using var stream = await response.Content.ReadAsStreamAsync();
             using var fs = File.Create(downloadPath);
             await stream.CopyToAsync(fs);
+            //REIKALAVIMAS
+            using var db = new NodeDbContext();
+            db.Database.EnsureCreated();
+            db.DownloadLogs.Add(new DownloadLog { FileName = finalFileName, DownloadedAt = DateTime.Now });
+            db.SaveChanges();
 
             StatusMessage = $"Saved to Downloads: {finalFileName}!";
         }
@@ -289,4 +300,5 @@ public partial class NetworkClientViewModel : ViewModelBase
             StatusMessage = $"Download failed: {ex.Message}";
         }
     }
+  
 }
