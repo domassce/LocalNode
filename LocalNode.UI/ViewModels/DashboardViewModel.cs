@@ -174,7 +174,6 @@ public partial class DashboardViewModel : ViewModelBase
             try
             {
                 var context = await _listener.GetContextAsync();
-                _logger.LogInfo("Gauta užklausa");
                 _ = Task.Run(async () =>
                 {
                     var req = context.Request;

@@ -8,7 +8,7 @@ namespace LocalNode.UI.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly FileHostingService _fileService;
-
+    private readonly SystemLogsViewModel _systemLogsViewModel;
     private readonly DashboardViewModel _dashboardViewModel;
     private readonly HostedFilesViewModel _hostedFilesViewModel;
     private readonly NetworkClientViewModel _networkClientViewModel;
@@ -20,6 +20,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        _systemLogsViewModel = new SystemLogsViewModel(_settingsViewModel);
         _settingsViewModel = new SettingsViewModel();
         UserName = _settingsViewModel.DisplayName;
 
@@ -59,6 +60,12 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (pageName == "Settings")
         {
             CurrentPageContent = _settingsViewModel;
+        }
+        else if (pageName == "System Logs")
+        {
+         
+            _ = _systemLogsViewModel.LoadLogsAsync();
+            CurrentPageContent = _systemLogsViewModel;
         }
         else
         {

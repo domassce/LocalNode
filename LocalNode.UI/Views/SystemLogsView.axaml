@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.SystemLogsView"
+             x:DataType="vm:SystemLogsViewModel">
+
+	<Grid RowDefinitions="Auto, *">
+
+		<Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,20">
+			<StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+				<TextBlock Text="System Events" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+
+				<Border Background="#1E1E2D" CornerRadius="8" Padding="15,5" BorderBrush="#2B2B40" BorderThickness="1">
+					<StackPanel Orientation="Horizontal" Spacing="15">
+						<CheckBox IsChecked="{Binding ShowInfo}" Content="INFO" Foreground="#50CD89" FontWeight="Bold"/>
+						<CheckBox IsChecked="{Binding ShowWarn}" Content="WARNINGS" Foreground="#F6C000" FontWeight="Bold"/>
+						<CheckBox IsChecked="{Binding ShowError}" Content="ERRORS" Foreground="#F1416C" FontWeight="Bold"/>
+					</StackPanel>
+				</Border>
+
+			
+			</StackPanel>
+
+			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+				<!-- Mygtukas atnaujintas, kad atitiktų Async komandos vardą -->
+				<Button Content="Refresh" Command="{Binding LoadLogsCommand}" Background="#2B2B40" Foreground="White" CornerRadius="6" Padding="15,8"/>
+				<Button Content="Clear Logs" Command="{Binding ClearLogsCommand}" Background="#F1416C" Foreground="White" CornerRadius="6" Padding="15,8" FontWeight="Bold"/>
+			</StackPanel>
+		</Grid>
+
+		<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" BorderBrush="#2B2B40" BorderThickness="1">
+			<Grid RowDefinitions="Auto, *">
+
+				<Grid Grid.Row="0" ColumnDefinitions="150, 100, *" Margin="20,15,20,10">
+					<TextBlock Grid.Column="0" Text="TIMESTAMP" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="1" Text="LEVEL" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="2" Text="MESSAGE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+				</Grid>
+				<Rectangle Grid.Row="0" Height="1" Fill="#2B2B40" VerticalAlignment="Bottom"/>
+
+				<ListBox Grid.Row="1" ItemsSource="{Binding FilteredLogs}" Background="Transparent" Margin="10">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<!-- Pagrindinis Grid, kur detalės ir pranešimas sugrupuoti į 3-ąjį stulpelį -->
+							<Grid ColumnDefinitions="150, 100, *" Margin="10,8">
+								<TextBlock Grid.Column="0" Text="{Binding Timestamp}" Foreground="#A1A5B7" VerticalAlignment="Top" FontSize="13"/>
+
+								<Border Grid.Column="1" Background="#151521" CornerRadius="4" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Top">
+									<TextBlock Text="{Binding Level}" Foreground="{Binding ColorHex}" FontWeight="Bold" FontSize="11"/>
+								</Border>
+
+								<!-- Sprendimas persidengimui: Message ir Details idėti į vieną stulpelį vienas po kito -->
+								<StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Top">
+									<TextBlock Text="{Binding Message}" Foreground="White" TextWrapping="Wrap" FontSize="13"/>
+									<TextBlock Text="{Binding Details}" IsVisible="{Binding Details, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+											   Foreground="#F1416C" FontSize="11" TextWrapping="Wrap"/>
+								</StackPanel>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</Grid>
+		</Border>
+	</Grid>
+</UserControl>

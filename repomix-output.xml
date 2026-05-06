@@ -1,0 +1,2833 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+LocalNode.Core/Attributes/FileCategoryAttribute.cs
+LocalNode.Core/Database/NodeDbContext.cs
+LocalNode.Core/Enums/FilePermissions.cs
+LocalNode.Core/Exceptions/NodeDirectoryNotFoundException.cs
+LocalNode.Core/Extensions/AppExtensions.cs
+LocalNode.Core/Extensions/FileEntityExtensions.cs
+LocalNode.Core/Interfaces/IFileEntity.cs
+LocalNode.Core/Interfaces/ILogger.cs
+LocalNode.Core/LocalNode.Core.csproj
+LocalNode.Core/LocalNode.Core.sln
+LocalNode.Core/Models/DocumentFile.cs
+LocalNode.Core/Models/FileEntity.cs
+LocalNode.Core/Models/MediaFile.cs
+LocalNode.Core/Models/NodeFileCollection.cs
+LocalNode.Core/Records/FileStatsRecord.cs
+LocalNode.Core/Services/DiscoveryService.cs
+LocalNode.Core/Services/FileCategorizer.cs
+LocalNode.Core/Services/FileHostingService.cs
+LocalNode.sln
+LocalNode.UI/App.axaml
+LocalNode.UI/App.axaml.cs
+LocalNode.UI/app.manifest
+LocalNode.UI/Assets/avalonia-logo.ico
+LocalNode.UI/LocalNode.UI.csproj
+LocalNode.UI/Program.cs
+LocalNode.UI/Services/FileLogger.cs
+LocalNode.UI/ViewLocator.cs
+LocalNode.UI/ViewModels/DashboardViewModel.cs
+LocalNode.UI/ViewModels/HostedFilesViewModel.cs
+LocalNode.UI/ViewModels/MainWindowViewModel.cs
+LocalNode.UI/ViewModels/NetworkClientViewModel.cs
+LocalNode.UI/ViewModels/SettingsViewModel.cs
+LocalNode.UI/ViewModels/ViewModelBase.cs
+LocalNode.UI/Views/DashboardView.axaml
+LocalNode.UI/Views/DashboardView.axaml.cs
+LocalNode.UI/Views/HostedFilesView.axaml
+LocalNode.UI/Views/HostedFilesView.axaml.cs
+LocalNode.UI/Views/MainWindow.axaml
+LocalNode.UI/Views/MainWindow.axaml.cs
+LocalNode.UI/Views/NetworkClientView.axaml
+LocalNode.UI/Views/NetworkClientView.axaml.cs
+LocalNode.UI/Views/SettingsView.axaml
+LocalNode.UI/Views/SettingsView.axaml.cs
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="LocalNode.Core/Attributes/FileCategoryAttribute.cs">
+using System;
+
+namespace LocalNode.Core.Attributes
+{
+    /// <summary>
+    /// Custom attribute to define the category of a file entity class.
+    /// Demonstrates the use of Attributes and Reflection.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    public sealed class FileCategoryAttribute(string category) : Attribute
+    {
+        /// <summary>
+        /// Gets the category name.
+        /// </summary>
+        public string Category { get; } = category;
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Database/NodeDbContext.cs">
+using Microsoft.EntityFrameworkCore;
+
+namespace LocalNode.Core.Database;
+
+//REIKALAVIMAS
+public class DownloadLog
+{
+    public int Id { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public DateTime DownloadedAt { get; set; }
+}
+
+public class NodeDbContext : DbContext
+{
+    public DbSet<DownloadLog> DownloadLogs { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlite("Data Source=localnode.db");
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Exceptions/NodeDirectoryNotFoundException.cs">
+using System;
+
+namespace LocalNode.Core.Exceptions;
+
+//REIKALAVIMAS
+public class NodeDirectoryNotFoundException : Exception
+{
+    public string MissingPath { get; }
+
+    public NodeDirectoryNotFoundException(string path)
+        : base($"Critical error: Node directory not found '{path}'.")
+    {
+        MissingPath = path;
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Extensions/AppExtensions.cs">
+using System.IO;
+using LocalNode.Core.Interfaces;
+
+namespace LocalNode.Core.Extensions;
+
+public static class AppExtensions
+{
+    //REIKALAVIMAS
+    public static string SanitizePath(this string path) => path.Replace('\\', '/');
+
+    //REIKALAVIMAS
+    public static void LogEntityAction<T>(this T entity, ILogger logger, string action) where T : IFileEntity
+    {
+        logger.LogInfo($"[{action}] Generic processing for type {typeof(T).Name}: {entity.Name}");
+    }
+
+    //REIKALAVIMAS
+    public static void Deconstruct(this FileInfo info, out string name, out long size)
+    {
+        name = info.Name;
+        size = info.Length;
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Interfaces/ILogger.cs">
+using System;
+
+namespace LocalNode.Core.Interfaces
+{
+    /// <summary>
+    /// Defines a simple logging contract.
+    /// </summary>
+    public interface ILogger
+    {
+        /// <summary>
+        /// Logs a message with the Information severity level.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        void LogInfo(string message);
+
+        /// <summary>
+        /// Logs a message with the Warning severity level.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        void LogWarning(string message);
+
+        /// <summary>
+        /// Logs a message with the Error severity level, optionally including exception details.
+        /// </summary>
+        /// <param name="message">The error message to log.</param>
+        /// <param name="ex">An optional exception to include in the log entry.</param>
+        void LogError(string message, Exception? ex = null);
+    }
+}
+</file>
+
+<file path="LocalNode.Core/LocalNode.Core.sln">
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalNode.Core", "LocalNode.Core.csproj", "{B0C2FFBC-79F6-6D13-4987-376F7E32E22A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B0C2FFBC-79F6-6D13-4987-376F7E32E22A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0C2FFBC-79F6-6D13-4987-376F7E32E22A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0C2FFBC-79F6-6D13-4987-376F7E32E22A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0C2FFBC-79F6-6D13-4987-376F7E32E22A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EEA5E2C9-6D24-48BF-8D6A-E007B8638EBA}
+	EndGlobalSection
+EndGlobal
+</file>
+
+<file path="LocalNode.Core/Models/NodeFileCollection.cs">
+using System.Collections;
+using LocalNode.Core.Interfaces;
+
+namespace LocalNode.Core.Models;
+
+//REIKALAVIMAS
+public class NodeFileCollection<T> : IEnumerable<T> where T : IFileEntity
+{
+    private readonly List<T> _items = new();
+
+    public void Add(T item) => _items.Add(item);
+
+    //REIKALAVIMAS
+    public IEnumerable<T> GetLargeFiles(long minSizeBytes)
+    {
+        foreach (var item in _items)
+        {
+            if (item.Size > minSizeBytes)
+            {
+                yield return item;
+            }
+        }
+    }
+
+    public IEnumerator<T> GetEnumerator() => new NodeEnumerator(_items);
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    //REIKALAVIMAS
+    private class NodeEnumerator : IEnumerator<T>
+    {
+        private readonly List<T> _list;
+        private int _index = -1;
+
+        public NodeEnumerator(List<T> list) => _list = list;
+
+        public T Current => _list[_index];
+        object IEnumerator.Current => Current;
+
+        public bool MoveNext() => ++_index < _list.Count;
+        public void Reset() => _index = -1;
+        public void Dispose() { }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/App.axaml">
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LocalNode.UI.App"
+             xmlns:local="using:LocalNode.UI"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>
+</file>
+
+<file path="LocalNode.UI/Program.cs">
+using Avalonia;
+using System;
+
+namespace LocalNode.UI;
+
+sealed class Program
+{
+    // Initialization code. Don't use any Avalonia, third-party APIs or any
+    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
+    // yet and stuff might break.
+    [STAThread]
+    public static void Main(string[] args) => BuildAvaloniaApp()
+        .StartWithClassicDesktopLifetime(args);
+
+    // Avalonia configuration, don't remove; also used by visual designer.
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+            .LogToTrace();
+}
+</file>
+
+<file path="LocalNode.UI/ViewModels/ViewModelBase.cs">
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace LocalNode.UI.ViewModels;
+
+public abstract class ViewModelBase : ObservableObject
+{
+}
+</file>
+
+<file path="LocalNode.UI/Views/DashboardView.axaml">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+	<StackPanel Spacing="20">
+		<TextBlock Text="System Overview" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+
+		<UniformGrid Columns="3">
+
+			<Border Background="#2B2B40" CornerRadius="12" Padding="20" Margin="0,0,10,0">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Total Files" Foreground="#A1A5B7" FontSize="14" FontWeight="Medium"/>
+					<TextBlock Text="{Binding TotalFiles}" Foreground="White" FontSize="28" FontWeight="Bold"/>
+				</StackPanel>
+			</Border>
+
+			<Border Background="#2B2B40" CornerRadius="12" Padding="20" Margin="10,0,10,0">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Storage Used" Foreground="#A1A5B7" FontSize="14" FontWeight="Medium"/>
+					<TextBlock Text="{Binding TotalSize}" Foreground="#009EF7" FontSize="28" FontWeight="Bold"/>
+				</StackPanel>
+			</Border>
+
+			<Border Background="#2B2B40" CornerRadius="12" Padding="20" Margin="10,0,0,0">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Last Updated" Foreground="#A1A5B7" FontSize="14" FontWeight="Medium"/>
+					<TextBlock Text="{Binding LastUpdated}" Foreground="#50CD89" FontSize="28" FontWeight="Bold"/>
+				</StackPanel>
+			</Border>
+
+		</UniformGrid>
+
+		<TextBlock Text="Server Status" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,20,0,0"/>
+
+		<Border Background="#1E1E2D" CornerRadius="12" Padding="30" BorderBrush="#2B2B40" BorderThickness="1">
+			<Grid ColumnDefinitions="*, Auto">
+
+				<StackPanel Grid.Column="0" VerticalAlignment="Center">
+					<TextBlock Text="{Binding ServerStatusMessage}" Foreground="White" FontSize="18" Margin="0,5,0,0"/>
+				</StackPanel>
+
+				<Button Grid.Column="1" Command="{Binding ToggleHostingCommand}"
+                        Background="#3E97FF"
+                        CornerRadius="8" Padding="30,15">
+					<Panel>
+						<StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding !IsHosting}">
+							<TextBlock Text="▶" Foreground="#50CD89" FontSize="16" VerticalAlignment="Center"/>
+							<TextBlock Text="START SERVER" Foreground="White" FontSize="16" FontWeight="Bold"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsHosting}">
+							<TextBlock Text="■" Foreground="#F1416C" FontSize="16" VerticalAlignment="Center"/>
+							<TextBlock Text="STOP SERVER" Foreground="White" FontSize="16" FontWeight="Bold"/>
+						</StackPanel>
+					</Panel>
+				</Button>
+
+			</Grid>
+		</Border>
+	</StackPanel>
+</UserControl>
+</file>
+
+<file path="LocalNode.UI/Views/MainWindow.axaml.cs">
+using Avalonia.Controls;
+
+namespace LocalNode.UI.Views;
+
+public partial class MainWindow : Window
+{
+    public MainWindow()
+    {
+        InitializeComponent();
+    }
+}
+</file>
+
+<file path="LocalNode.UI/Views/NetworkClientView.axaml.cs">
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using LocalNode.UI.ViewModels;
+
+namespace LocalNode.UI.Views;
+
+public partial class NetworkClientView : UserControl
+{
+    public NetworkClientView()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnDownloadClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string itemName)
+        {
+            if (DataContext is NetworkClientViewModel vm)
+            {
+                // Instantly downloads to the OS Downloads folder
+                await vm.DownloadItemAsync(itemName);
+            }
+        }
+    }
+
+    private async void OnItemDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is ListBox listBox && listBox.SelectedItem is RemoteFileItem item)
+        {
+            if (item.IsFolder && DataContext is NetworkClientViewModel vm)
+            {
+                await vm.NavigateIntoFolder(item.Name);
+            }
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/Views/SettingsView.axaml">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+	<StackPanel Spacing="20">
+		<TextBlock Text="Application Settings" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+
+		<Border Background="#1E1E2D" CornerRadius="12" Padding="30" BorderBrush="#2B2B40" BorderThickness="1" HorizontalAlignment="Left">
+			<StackPanel Spacing="20" HorizontalAlignment="Left">
+
+				<StackPanel Spacing="5">
+					<TextBlock Text="Display Name" Foreground="#A1A5B7"/>
+					<TextBox Text="{Binding DisplayName}" Background="#151521" Foreground="White" CornerRadius="6" Width="300" HorizontalAlignment="Left"/>
+				</StackPanel>
+
+				<Grid ColumnDefinitions="Auto, Auto">
+					<StackPanel Grid.Column="0" Spacing="5" Margin="0,0,15,0">
+						<TextBlock Text="Hosting Port" Foreground="#A1A5B7"/>
+						<TextBox Text="{Binding DefaultPort}" Background="#151521" Foreground="White" CornerRadius="6" Width="100"/>
+					</StackPanel>
+
+					<StackPanel Grid.Column="1" Spacing="5">
+						<TextBlock Text="Room Password" Foreground="#A1A5B7"/>
+						<TextBox Text="{Binding RoomPassword}" PasswordChar="*" Background="#151521" Foreground="White" CornerRadius="6" Width="185"/>
+					</StackPanel>
+				</Grid>
+
+				<StackPanel Spacing="5">
+					<TextBlock Text="Hosting Folder Path" Foreground="#A1A5B7"/>
+					<Grid ColumnDefinitions="Auto, Auto">
+						<TextBox Text="{Binding DefaultHostFolder}" Grid.Column="0" IsReadOnly="True" Background="#151521" Foreground="White" CornerRadius="6,0,0,6" Width="300"/>
+						<Button Grid.Column="1" Content="Browse..." Click="OnBrowseFolderClicked" Background="#3E97FF" Foreground="White" CornerRadius="0,6,6,0"/>
+					</Grid>
+				</StackPanel>
+
+				<StackPanel Spacing="5">
+					<TextBlock Text="Save System Logs To" Foreground="#A1A5B7"/>
+					<Grid ColumnDefinitions="Auto, Auto">
+						<TextBox Text="{Binding LogDirectory}" Grid.Column="0" IsReadOnly="True" Background="#151521" Foreground="White" CornerRadius="6,0,0,6" Width="300" Watermark="App directory if left empty..."/>
+						<Button Grid.Column="1" Content="Browse..." Click="OnBrowseLogFolderClicked" Background="#3E97FF" Foreground="White" CornerRadius="0,6,6,0"/>
+					</Grid>
+				</StackPanel>
+
+				<StackPanel Orientation="Horizontal" Spacing="15" Margin="0,10,0,0">
+					<Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" Background="#50CD89" Foreground="White" FontWeight="Bold" Padding="20,10" CornerRadius="8"/>
+					<TextBlock Text="{Binding StatusMessage}" Foreground="#009EF7" VerticalAlignment="Center" Width="250" TextWrapping="Wrap"/>
+				</StackPanel>
+
+			</StackPanel>
+		</Border>
+	</StackPanel>
+</UserControl>
+</file>
+
+<file path="LocalNode.Core/Extensions/FileEntityExtensions.cs">
+using System;
+using LocalNode.Core.Interfaces;
+
+namespace LocalNode.Core.Extensions
+{
+    /// <summary>
+    /// Provides extension methods for IFileEntity objects.
+    /// </summary>
+    public static class FileEntityExtensions
+    {
+        /// <summary>
+        /// Converts the file size in bytes to a human-readable format.
+        /// </summary>
+        public static string ToHumanReadableSize(this IFileEntity file)
+        {
+            if (file == null || file.Size == 0) return "0 B";
+
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int i = 0;
+            double dblSByte = file.Size;
+
+            while (dblSByte >= 1024 && i < suffixes.Length - 1)
+            {
+                dblSByte /= 1024;
+                i++;
+            }
+
+            return $"{dblSByte:0.##} {suffixes[i]}";
+        }
+
+        /// <summary>
+        /// Extracts the file extension from the file name.
+        /// </summary>
+        public static string GetExtension(this IFileEntity file)
+        {
+            if (file == null || string.IsNullOrWhiteSpace(file.Name))
+                return string.Empty;
+
+            int lastDotIndex = file.Name.LastIndexOf('.');
+            if (lastDotIndex < 0 || lastDotIndex == file.Name.Length - 1)
+                return string.Empty;
+
+            return file.Name.Substring(lastDotIndex).ToLowerInvariant();
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Models/MediaFile.cs">
+using System;
+using LocalNode.Core.Attributes;
+
+namespace LocalNode.Core.Models
+{
+    /// <summary>
+    /// Represents a media file (e.g., Video, Audio).
+    /// </summary>
+    [FileCategory("Media")]
+    public sealed class MediaFile : FileEntity
+    {
+        public TimeSpan Duration { get; set; }
+        public int Bitrate { get; set; }
+        public string Resolution { get; set; } = "Unknown";
+
+        public MediaFile(string name, long size, TimeSpan duration) : base(name, size)
+        {
+            Duration = duration;
+        }
+
+        public override void Open()
+        {
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Records/FileStatsRecord.cs">
+using System;
+
+namespace LocalNode.Core.Records
+{
+    /// <summary>
+    /// A record type representing statistics about the file hosting system.
+    /// Demonstrates C# 9+ Record types for immutable data transfer objects.
+    /// </summary>
+    public record FileStatsRecord(int TotalFiles, long TotalSizeBytes);
+}
+</file>
+
+<file path="LocalNode.Core/Services/DiscoveryService.cs">
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace LocalNode.Core.Services;
+
+public class DiscoveryService
+{
+    private const int DiscoveryPort = 9876;
+    private const string Identifier = "LOCALNODE_V1";
+    private CancellationTokenSource? _cts;
+    public void StartAnnouncing(string nodeName, int port, bool requiresPassword)
+    {
+        _cts = new CancellationTokenSource();
+        Task.Run(async () => {
+            using var client = new UdpClient { EnableBroadcast = true };
+            var data = Encoding.UTF8.GetBytes($"{Identifier}|{nodeName}|{port}|{requiresPassword}");
+
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                await client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.Broadcast, DiscoveryPort));
+                await Task.Delay(3000); 
+            }
+        });
+    }
+    public async Task ListenForNodes(Action<DiscoveredNode> onFound)
+    {
+        using var listener = new UdpClient(DiscoveryPort);
+        while (true)
+        {
+            var result = await listener.ReceiveAsync();
+            var msg = Encoding.UTF8.GetString(result.Buffer);
+
+            if (msg.StartsWith(Identifier))
+            {
+                var parts = msg.Split('|');
+                onFound(new DiscoveredNode(
+                    Name: parts[1],
+                    IP: result.RemoteEndPoint.Address.ToString(),
+                    Port: int.Parse(parts[2]),
+                    NeedsPassword: bool.Parse(parts[3])
+                ));
+            }
+        }
+    }
+
+    public void Stop() => _cts?.Cancel();
+}
+
+public record DiscoveredNode(string Name, string IP, int Port, bool NeedsPassword);
+</file>
+
+<file path="LocalNode.UI/App.axaml.cs">
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Data.Core.Plugins;
+using Avalonia.Markup.Xaml;
+using LocalNode.UI.ViewModels;
+using LocalNode.UI.Views;
+using System.Linq;
+
+namespace LocalNode.UI;
+
+public partial class App : Application
+{
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
+            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
+            DisableAvaloniaDataAnnotationValidation();
+            desktop.MainWindow = new MainWindow
+            {
+                DataContext = new MainWindowViewModel(),
+            };
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private void DisableAvaloniaDataAnnotationValidation()
+    {
+        // Get an array of plugins to remove
+        var dataValidationPluginsToRemove =
+            BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
+
+        // remove each entry found
+        foreach (var plugin in dataValidationPluginsToRemove)
+        {
+            BindingPlugins.DataValidators.Remove(plugin);
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/app.manifest">
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+	<assemblyIdentity version="1.0.0.0" name="LocalNode.UI.Desktop"/>
+
+	<trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+		<security>
+			<requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+				<requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+			</requestedPrivileges>
+		</security>
+	</trustInfo>
+
+	<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+		<application>
+			<supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+		</application>
+	</compatibility>
+</assembly>
+</file>
+
+<file path="LocalNode.UI/ViewLocator.cs">
+using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using LocalNode.UI.ViewModels;
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+namespace LocalNode.UI;
+
+/// <summary>
+/// Given a view model, returns the corresponding view if possible.
+/// </summary>
+[RequiresUnreferencedCode(
+    "Default implementation of ViewLocator involves reflection which may be trimmed away.",
+    Url = "https://docs.avaloniaui.net/docs/concepts/view-locator")]
+public class ViewLocator : IDataTemplate
+{
+    public Control? Build(object? param)
+    {
+        if (param is null)
+            return null;
+
+        var name = param.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
+        var type = Type.GetType(name);
+
+        if (type != null)
+        {
+            return (Control)Activator.CreateInstance(type)!;
+        }
+
+        return new TextBlock { Text = "Not Found: " + name };
+    }
+
+    public bool Match(object? data)
+    {
+        return data is ViewModelBase;
+    }
+}
+</file>
+
+<file path="LocalNode.UI/Views/DashboardView.axaml.cs">
+using Avalonia.Controls;
+
+namespace LocalNode.UI.Views;
+
+public partial class DashboardView : UserControl
+{
+    public DashboardView()
+    {
+        InitializeComponent();
+    }
+}
+</file>
+
+<file path="LocalNode.UI/Views/HostedFilesView.axaml">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.HostedFilesView"
+             x:DataType="vm:HostedFilesViewModel">
+
+	<Grid RowDefinitions="Auto, *">
+
+		<Grid Grid.Row="0" RowDefinitions="Auto, Auto" Margin="0,0,0,20">
+
+			<Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,8">
+
+
+				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+					<Button Content="Go Back" Command="{Binding NavigateUpCommand}" IsVisible="{Binding CanNavigateUp}" Background="#2B2B40" Foreground="White" CornerRadius="6"/>
+					<Button Content="Refresh" Command="{Binding RefreshFilesCommand}" Background="#2B2B40" Foreground="White" CornerRadius="6"/>
+					<Button Content="+ Add File" Click="OnAddFileClicked" Background="#50CD89" Foreground="White" FontWeight="Bold" CornerRadius="6"/>
+				</StackPanel>
+			</Grid>
+
+			<TextBlock Grid.Row="1" Text="{Binding CurrentLocalPath}" FontSize="12" Foreground="#4A4A5A" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding CurrentLocalPath}"/>
+		</Grid>
+
+		<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" BorderBrush="#2B2B40" BorderThickness="1">
+			<Grid RowDefinitions="Auto, *">
+
+				<Grid Grid.Row="0" ColumnDefinitions="Auto, 3*, 1.5*, 1.5*, Auto" Margin="20,15,20,10">
+					<TextBlock Grid.Column="1" Text="NAME" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="2" Text="TYPE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="3" Text="SIZE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+					<TextBlock Grid.Column="4" Text="ACTIONS" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12" Width="140" TextAlignment="Center"/>
+				</Grid>
+
+				<Rectangle Grid.Row="0" Height="1" Fill="#2B2B40" VerticalAlignment="Bottom"/>
+
+				<ListBox Grid.Row="1" ItemsSource="{Binding Files}" Background="Transparent" Margin="10" DoubleTapped="OnItemDoubleTapped">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<Grid ColumnDefinitions="Auto, 3*, 1.5*, 1.5*, Auto" Margin="10,8" Background="Transparent">
+
+								<Panel Grid.Column="0" Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center">
+
+									<Path Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"
+										  Fill="#3E97FF"
+										  Stretch="Uniform"
+										  IsVisible="{Binding IsFolder}"/>
+
+									<Path Data="M13 9V3.5L18.5 9M6 2C4.89 2 4 2.89 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2H6Z"
+										  Fill="#A1A5B7"
+										  Stretch="Uniform"
+										  IsVisible="{Binding !IsFolder}"/>
+								</Panel>
+
+								<TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,15,0"/>
+								<TextBlock Grid.Column="2" Text="{Binding FileType}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+								<TextBlock Grid.Column="3" Text="{Binding SizeFormatted}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+
+								<StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="10" Width="140" HorizontalAlignment="Right">
+									<Button Content="Open" Command="{Binding $parent[UserControl].((vm:HostedFilesViewModel)DataContext).OpenFileCommand}" CommandParameter="{Binding FullPath}" Background="#3E97FF" Foreground="White" CornerRadius="6" Width="60" HorizontalContentAlignment="Center"/>
+									<Button Content="Delete" Command="{Binding $parent[UserControl].((vm:HostedFilesViewModel)DataContext).DeleteFileCommand}" CommandParameter="{Binding FullPath}" Background="#F1416C" Foreground="White" CornerRadius="6" Width="60" HorizontalContentAlignment="Center"/>
+								</StackPanel>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+
+			</Grid>
+		</Border>
+
+	</Grid>
+</UserControl>
+</file>
+
+<file path="LocalNode.UI/Views/HostedFilesView.axaml.cs">
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using LocalNode.UI.ViewModels;
+using System.Linq;
+
+namespace LocalNode.UI.Views;
+
+public partial class HostedFilesView : UserControl
+{
+    public HostedFilesView()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnAddFileClicked(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select a file to host",
+            AllowMultiple = false
+        });
+
+        if (files.Count > 0)
+        {
+            var filePath = files.First().Path.LocalPath;
+            if (DataContext is HostedFilesViewModel vm)
+            {
+                vm.AddPhysicalFile(filePath);
+            }
+        }
+    }
+
+    private void OnItemDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is ListBox listBox && listBox.SelectedItem is HostedFileItem item)
+        {
+            if (item.IsFolder && DataContext is HostedFilesViewModel vm)
+            {
+                vm.NavigateIntoFolder(item.Name);
+            }
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/Views/NetworkClientView.axaml">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.NetworkClientView"
+             x:DataType="vm:NetworkClientViewModel">
+
+	<Grid>
+		<Grid RowDefinitions="Auto, *">
+
+			<StackPanel Grid.Row="0" Spacing="15" Margin="0,0,0,20">
+
+				<Border Background="#1E1E2D" CornerRadius="12" Padding="20">
+					<StackPanel Spacing="15">
+						<TextBlock Text="Connect to Remote Server" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+						<Grid ColumnDefinitions="*, *, Auto">
+							<TextBox Grid.Column="0" Text="{Binding ServerUrl}" Watermark="Server URL" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
+							<TextBox Grid.Column="1" Text="{Binding RoomPassword}" PasswordChar="*" Watermark="Password (Optional)" Margin="0,0,15,0" Background="#151521" Foreground="White"/>
+							<Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" Background="#009EF7" Foreground="White" FontWeight="Bold" Padding="20,8" CornerRadius="6"/>
+						</Grid>
+						<Grid ColumnDefinitions="*, Auto">
+							<TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#50CD89" FontWeight="Medium" VerticalAlignment="Center"/>
+
+							<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+								<Button Content="Disconnect" Command="{Binding DisconnectServerCommand}"
+                                        IsVisible="{Binding IsConnected}"
+                                        Background="#F1416C" Foreground="White" CornerRadius="6"/>
+								<Button Content="&lt; Go Back" Command="{Binding NavigateUpCommand}"
+                                        IsVisible="{Binding CurrentRemotePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                        Background="#2B2B40" Foreground="White" CornerRadius="6"/>
+							</StackPanel>
+						</Grid>
+					</StackPanel>
+				</Border>
+
+				<Border Background="#1E1E2D" CornerRadius="12" Padding="20" IsVisible="{Binding !IsConnected}">
+					<StackPanel Spacing="15">
+
+						<Grid ColumnDefinitions="*, Auto">
+							<TextBlock Grid.Column="0" Text="Nearby Nodes Found"
+									   IsVisible="{Binding !!AvailableNodes.Count}"
+									   FontSize="14" FontWeight="SemiBold" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+							<Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshNodesCommand}"
+									Background="#2B2B40" Foreground="White" Padding="15,5" CornerRadius="6"/>
+						</Grid>
+
+						<ItemsControl ItemsSource="{Binding AvailableNodes}" IsVisible="{Binding !!AvailableNodes.Count}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<WrapPanel />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Button Command="{Binding $parent[UserControl].((vm:NetworkClientViewModel)DataContext).SelectDiscoveredNodeCommand}"
+											CommandParameter="{Binding}"
+											Background="#2B2B40" Margin="0,0,10,10" Padding="15,10" CornerRadius="8">
+										<StackPanel Orientation="Horizontal" Spacing="12">
+											<StackPanel>
+												<TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold"/>
+												<TextBlock Text="{Binding IP}" Foreground="#A1A5B7" FontSize="11"/>
+											</StackPanel>
+											<TextBlock Text="[LOCKED]" Foreground="#F1416C" FontSize="11" FontWeight="Bold"
+													   IsVisible="{Binding NeedsPassword}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+										</StackPanel>
+									</Button>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+
+						<Border Background="#151521" CornerRadius="8" Padding="30" IsVisible="{Binding !AvailableNodes.Count}">
+							<Grid>
+								<TextBlock Text="Searching network for active nodes..."
+										   IsVisible="{Binding IsScanning}"
+										   Foreground="#A1A5B7" FontStyle="Italic" HorizontalAlignment="Center"/>
+
+								<TextBlock Text="No active nodes found on the local network."
+										   IsVisible="{Binding !IsScanning}"
+										   Foreground="#F1416C" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+							</Grid>
+						</Border>
+
+					</StackPanel>
+				</Border>
+			</StackPanel>
+
+			<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" IsVisible="{Binding IsConnected}">
+				<Grid RowDefinitions="Auto, *">
+					<Grid Grid.Row="0" ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="20,15,20,10">
+						<TextBlock Grid.Column="0" Width="34" />
+						<TextBlock Grid.Column="1" Text="NAME" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+						<TextBlock Grid.Column="2" Text="TYPE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+						<TextBlock Grid.Column="3" Text="SIZE" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12"/>
+						<TextBlock Grid.Column="4" Text="ACTION" Foreground="#A1A5B7" FontWeight="Bold" FontSize="12" Width="100" TextAlignment="Center"/>
+					</Grid>
+					<Rectangle Grid.Row="0" Height="1" Fill="#2B2B40" VerticalAlignment="Bottom"/>
+
+					<ListBox Grid.Row="1" ItemsSource="{Binding RemoteFiles}" Background="Transparent" Margin="10" DoubleTapped="OnItemDoubleTapped">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Grid ColumnDefinitions="Auto, 4*, 2*, 2*, Auto" Margin="10,8" Background="Transparent">
+
+									<Panel Grid.Column="0" Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center">
+										<Path Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"
+											  Fill="#3E97FF"
+											  Stretch="Uniform"
+											  IsVisible="{Binding IsFolder}"/>
+
+										<Path Data="M13 9V3.5L18.5 9M6 2C4.89 2 4 2.89 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2H6Z"
+											  Fill="#A1A5B7"
+											  Stretch="Uniform"
+											  IsVisible="{Binding !IsFolder}"/>
+									</Panel>
+
+									<TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,15,0"/>
+									<TextBlock Grid.Column="2" Text="{Binding Type}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+									<TextBlock Grid.Column="3" Text="{Binding SizeFormatted}" Foreground="#A1A5B7" VerticalAlignment="Center"/>
+
+									<Button Grid.Column="4" Content="Download" Width="100" HorizontalContentAlignment="Center"
+                                            Click="OnDownloadClicked" Tag="{Binding Name}"
+                                            Background="#3E97FF" Foreground="White" CornerRadius="6"/>
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</Grid>
+			</Border>
+		</Grid>
+
+		<Border IsVisible="{Binding ShowPasswordPrompt}" Background="#CC000000" ZIndex="1000">
+			<Border Background="#1E1E2D" CornerRadius="12" Padding="30" VerticalAlignment="Center" HorizontalAlignment="Center" Width="350">
+				<StackPanel Spacing="20">
+					<TextBlock Text="Password Protected" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+					<TextBlock Text="This node requires a password to connect." Foreground="#A1A5B7" TextWrapping="Wrap" TextAlignment="Center"/>
+
+					<TextBox Text="{Binding RoomPassword}" PasswordChar="*" Watermark="Enter Password" Background="#151521" Foreground="White" HorizontalContentAlignment="Center"/>
+
+					<StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+						<Button Content="Cancel" Command="{Binding CancelPasswordCommand}" Background="#2B2B40" Foreground="White" Padding="20,10"/>
+						<Button Content="Connect" Command="{Binding SubmitPasswordAndConnectCommand}" Background="#009EF7" Foreground="White" FontWeight="Bold" Padding="20,10"/>
+					</StackPanel>
+				</StackPanel>
+			</Border>
+		</Border>
+	</Grid>
+</UserControl>
+</file>
+
+<file path="LocalNode.UI/Views/SettingsView.axaml.cs">
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using LocalNode.UI.ViewModels;
+using System.Linq;
+
+namespace LocalNode.UI.Views;
+
+public partial class SettingsView : UserControl
+{
+    public SettingsView()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnBrowseFolderClicked(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Select Folder to Host", AllowMultiple = false });
+
+        if (folders.Count > 0)
+        {
+            if (DataContext is SettingsViewModel vm)
+            {
+                vm.DefaultHostFolder = folders.First().Path.LocalPath;
+                vm.SaveSettings();
+            }
+        }
+    }
+
+    private async void OnBrowseLogFolderClicked(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Select Log Save Location", AllowMultiple = false });
+
+        if (folders.Count > 0)
+        {
+            //REIKALAVIMAS
+            if (DataContext is SettingsViewModel vm)
+            {
+                vm.LogDirectory = folders.First().Path.LocalPath;
+                vm.SaveSettings();
+            }
+        }
+    }
+}
+</file>
+
+<file path="README.md">
+# LocalNode
+
+LocalNode is a local network file hosting server built with C# and Avalonia UI. It allows you to transform any computer into a file-sharing node within a local area network without relying on external cloud services.
+
+
+
+## Features
+
+* Node Dashboard: Real-time server status monitoring, active hosting statistics, and storage metrics.
+* Integrated Explorer: Manage root directories.
+* Path Intelligence: UI implementation featuring smart path truncation and informative tooltips for deep directory structures.
+* Network Client: Connect to other LocalNode instances across the same Wi-Fi or Ethernet network.
+
+---
+
+## Quick Start
+
+### Prerequisites
+* .NET 8.0 SDK (or later).
+* Active Local Area Network (LAN) access.
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/your-username/LocalNode.git](https://github.com/your-username/LocalNode.git)
+   cd LocalNode
+</file>
+
+<file path="LocalNode.Core/Enums/FilePermissions.cs">
+using System;
+
+namespace LocalNode.Core.Enums
+{
+    /// <summary>
+    /// Defines the permissions that can be applied to a file or folder.
+    /// This enum uses the Flags attribute to allow bitwise combinations.
+    /// </summary>
+    [Flags]
+    public enum FilePermissions
+    {
+        /// <summary>No permissions granted.</summary>
+        None = 0,
+
+        //REIKALAVIMAS
+        /// <summary>Permission to read the file.</summary>
+        Read = 1 << 0,
+
+        /// <summary>Permission to modify the file.</summary>
+        Write = 1 << 1,
+
+        /// <summary>Permission to run the file.</summary>
+        Execute = 1 << 2,
+
+        /// <summary>Permission to remove the file.</summary>
+        Delete = 1 << 3,
+
+        /// <summary>Permission to share the file with others.</summary>
+        Share = 1 << 4,
+
+        /// <summary>All permissions granted.</summary>
+        All = Read | Write | Execute | Delete | Share
+    }
+}
+</file>
+
+<file path="LocalNode.Core/LocalNode.Core.csproj">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Storage\**" />
+    <EmbeddedResource Remove="Storage\**" />
+    <None Remove="Storage\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Interfaces\IStorageProvider.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.15">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.15" />
+  </ItemGroup>
+
+</Project>
+</file>
+
+<file path="LocalNode.sln">
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalNode.UI", "LocalNode.UI\LocalNode.UI.csproj", "{D37F5723-5A0A-40AC-81AC-566E333A01D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalNode.Core", "LocalNode.Core\LocalNode.Core.csproj", "{F23B0891-7AF3-E811-2F49-0BA5855F1397}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Debug|x64.Build.0 = Debug|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Debug|x86.Build.0 = Debug|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Release|x64.ActiveCfg = Release|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Release|x64.Build.0 = Release|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Release|x86.ActiveCfg = Release|Any CPU
+		{D37F5723-5A0A-40AC-81AC-566E333A01D3}.Release|x86.Build.0 = Release|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Debug|x64.Build.0 = Debug|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Debug|x86.Build.0 = Debug|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Release|x64.ActiveCfg = Release|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Release|x64.Build.0 = Release|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Release|x86.ActiveCfg = Release|Any CPU
+		{F23B0891-7AF3-E811-2F49-0BA5855F1397}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B6412EEA-5FE4-4370-91B3-A03A551D3F4E}
+	EndGlobalSection
+EndGlobal
+</file>
+
+<file path="LocalNode.UI/ViewModels/MainWindowViewModel.cs">
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Services;
+using LocalNode.UI.Services;
+
+namespace LocalNode.UI.ViewModels;
+
+public partial class MainWindowViewModel : ViewModelBase
+{
+    private readonly FileHostingService _fileService;
+
+    private readonly DashboardViewModel _dashboardViewModel;
+    private readonly HostedFilesViewModel _hostedFilesViewModel;
+    private readonly NetworkClientViewModel _networkClientViewModel;
+    private readonly SettingsViewModel _settingsViewModel;
+
+    [ObservableProperty] private ViewModelBase _currentPageContent;
+    [ObservableProperty] private string _pageTitle = "Dashboard";
+    [ObservableProperty] private string _userName = "Anonymous";
+
+    public MainWindowViewModel()
+    {
+        _settingsViewModel = new SettingsViewModel();
+        UserName = _settingsViewModel.DisplayName;
+
+        var logger = new FileLogger(_settingsViewModel);
+        _fileService = new FileHostingService(logger);
+
+        _dashboardViewModel = new DashboardViewModel(_fileService, _settingsViewModel, logger);
+        _hostedFilesViewModel = new HostedFilesViewModel(_fileService)
+        {
+            Settings = _settingsViewModel
+        };
+
+        _networkClientViewModel = new NetworkClientViewModel(_settingsViewModel);
+        _hostedFilesViewModel.Dashboard = _dashboardViewModel;
+        CurrentPageContent = _dashboardViewModel;
+    }
+
+    [RelayCommand]
+    private void Navigate(string pageName)
+    {
+        PageTitle = pageName;
+
+        if (pageName == "Dashboard")
+        {
+            _dashboardViewModel.RefreshStats();
+            CurrentPageContent = _dashboardViewModel;
+        }
+        else if (pageName == "Hosted Files")
+        {
+            _hostedFilesViewModel.RefreshFiles();
+            CurrentPageContent = _hostedFilesViewModel;
+        }
+        else if (pageName == "Network Client")
+        {
+            CurrentPageContent = _networkClientViewModel;
+        }
+        else if (pageName == "Settings")
+        {
+            CurrentPageContent = _settingsViewModel;
+        }
+        else
+        {
+            CurrentPageContent = null!;
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/ViewModels/SettingsViewModel.cs">
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace LocalNode.UI.ViewModels;
+
+public class AppConfig
+{
+    public string DisplayName { get; set; } = "Anonymous";
+    public string DefaultHostFolder { get; set; } = string.Empty;
+    public string DefaultPort { get; set; } = "5050";
+    public string RoomPassword { get; set; } = string.Empty;
+    public string LogDirectory { get; set; } = string.Empty; // <-- New!
+}
+
+public partial class SettingsViewModel : ViewModelBase
+{
+    public const string ConfigFilePath = "appsettings.json";
+
+    [ObservableProperty] private string _displayName = "Anonymous";
+    [ObservableProperty] private string _defaultHostFolder = string.Empty;
+    [ObservableProperty] private string _defaultPort = "5050";
+    [ObservableProperty] private string _roomPassword = string.Empty;
+    [ObservableProperty] private string _logDirectory = string.Empty;
+
+    [ObservableProperty] private string _statusMessage = string.Empty;
+
+    public SettingsViewModel()
+    {
+        LoadSettings();
+    }
+
+    public void LoadSettings()
+    {
+        if (File.Exists(ConfigFilePath))
+        {
+            try
+            {
+                var json = File.ReadAllText(ConfigFilePath);
+                var config = JsonSerializer.Deserialize<AppConfig>(json);
+                if (config != null)
+                {
+                    DisplayName = config.DisplayName ?? "Anonymous";
+                    DefaultHostFolder = config.DefaultHostFolder ?? string.Empty;
+                    DefaultPort = config.DefaultPort ?? "5050";
+                    RoomPassword = config.RoomPassword ?? string.Empty;
+                    LogDirectory = config.LogDirectory ?? string.Empty; 
+                }
+            }
+            catch {}
+        }
+    }
+
+    [RelayCommand]
+    public void SaveSettings()
+    {
+        var config = new AppConfig
+        {
+            DisplayName = DisplayName,
+            DefaultHostFolder = DefaultHostFolder,
+            DefaultPort = DefaultPort,
+            RoomPassword = RoomPassword,
+            LogDirectory = LogDirectory
+        };
+
+        File.WriteAllText(ConfigFilePath, JsonSerializer.Serialize(config));
+
+        StatusMessage = "Settings saved successfully!";
+        Task.Delay(3000).ContinueWith(_ => StatusMessage = string.Empty);
+    }
+}
+</file>
+
+<file path="LocalNode.UI/Views/MainWindow.axaml">
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LocalNode.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
+        x:Class="LocalNode.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Local File Hosting"
+        RequestedThemeVariant="Dark"
+        Width="1024" Height="768"
+        WindowStartupLocation="CenterScreen">
+
+	<Design.DataContext>
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+
+	<Window.Styles>
+		<Style Selector="RadioButton.NavButton">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Foreground" Value="#A1A5B7"/>
+			<Setter Property="Padding" Value="15,12"/>
+			<Setter Property="CornerRadius" Value="8"/>
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
+			<Setter Property="HorizontalContentAlignment" Value="Left"/>
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+						<ContentPresenter Content="{TemplateBinding Content}" Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center"/>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+
+		<Style Selector="RadioButton.NavButton:pointerover">
+			<Setter Property="Background" Value="#252538"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+
+		<Style Selector="RadioButton.NavButton:checked">
+			<Setter Property="Background" Value="#2B2B40"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+	</Window.Styles>
+
+	<Grid ColumnDefinitions="250, *">
+
+		<Border Grid.Column="0" Background="#1E1E2D" BorderBrush="#2B2B40" BorderThickness="0,0,1,0">
+			<Grid RowDefinitions="Auto, *, Auto">
+
+				<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,25,20,40" Spacing="15" VerticalAlignment="Center">
+
+					<Border Background="#151521" Padding="8" CornerRadius="10" BorderBrush="#2B2B40" BorderThickness="1">
+						<Path Data="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"
+                              Fill="#009EF7" Width="20" Height="20" Stretch="Uniform"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,2,0,0"/>
+					</Border>
+
+					<TextBlock VerticalAlignment="Center" FontSize="22" LetterSpacing="1">
+						<Run Text="Local" FontWeight="Medium" Foreground="#A1A5B7"/><Run Text="Node" FontWeight="Heavy" Foreground="White"/>		
+					</TextBlock>
+
+				</StackPanel>
+
+				<StackPanel Grid.Row="1" Spacing="5" Margin="10,0">
+					<RadioButton Classes="NavButton" Content="Dashboard" Command="{Binding NavigateCommand}" CommandParameter="Dashboard"
+                                 GroupName="SidebarNav" IsChecked="True"/>
+
+					<RadioButton Classes="NavButton" Content="Hosted Files" Command="{Binding NavigateCommand}" CommandParameter="Hosted Files"
+                                 GroupName="SidebarNav"/>
+
+					<RadioButton Classes="NavButton" Content="Network Client" Command="{Binding NavigateCommand}" CommandParameter="Network Client"
+                                 GroupName="SidebarNav"/>
+
+					<RadioButton Classes="NavButton" Content="Settings" Command="{Binding NavigateCommand}" CommandParameter="Settings"
+                                 GroupName="SidebarNav"/>
+				</StackPanel>
+
+				<TextBlock Grid.Row="2" Text="v0.0.3" Foreground="#4A4A5A" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+			</Grid>
+		</Border>
+
+		<Border Grid.Column="1" Background="#151521">
+			<Grid RowDefinitions="Auto, *">
+
+				<Border Grid.Row="0" Background="#151521" BorderBrush="#2B2B40" BorderThickness="0,0,0,1" Height="70" Padding="30,0">
+					<TextBlock Text="{Binding PageTitle}" VerticalAlignment="Center" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
+				</Border>
+
+				<Border Grid.Row="1" Margin="30" CornerRadius="12">
+					<ContentControl Content="{Binding CurrentPageContent}" />
+				</Border>
+			</Grid>
+		</Border>
+
+	</Grid>
+</Window>
+</file>
+
+<file path=".gitignore">
+# Visual Studio folders
+.vs/
+[Bb]in/
+[Oo]bj/
+Generated\ Files/
+ProjectEvaluation/
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE - VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Operating System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+/LocalNode.Core/Models/ArchiveFile.cs
+/LocalNode.Core/Models/UnknownFile.cs
+/LocalNode.Core/Logging/ConsoleLogger.cs
+/LocalNode.Core/Enums/StorageType.cs
+/LocalNode.Core/Exceptions/FileHostingException.cs
+/LocalNode.Core/Exceptions/StorageFullException.cs
+/LocalNode.Core/Exceptions/UnauthorizedFileAccessException.cs
+</file>
+
+<file path="LocalNode.Core/Interfaces/IFileEntity.cs">
+using System;
+using LocalNode.Core.Enums;
+
+namespace LocalNode.Core.Interfaces
+{
+    /// <summary>
+    /// Represents a generic file entity in the hosting system.
+    /// </summary>
+    /// REIKALAVIMAS
+    public interface IFileEntity
+    {
+        /// <summary>Gets the unique identifier for the file.</summary>
+        Guid Id { get; }
+
+        /// <summary>Gets the name of the file.</summary>
+        string Name { get; }
+
+        /// <summary>Gets the size of the file in bytes.</summary>
+        long Size { get; }
+
+        /// <summary>Gets the date and time when the file was created.</summary>
+        DateTime CreatedAt { get; }
+
+        /// <summary>Gets or sets the permissions associated with the file.</summary>
+        FilePermissions Permissions { get; set; }
+
+        /// <summary>
+        /// Renames the file entity.
+        /// </summary>
+        /// <param name="newName">The new name for the file.</param>
+        void Rename(string newName);
+
+        /// <summary>
+        /// Opens the file entity for viewing or processing.
+        /// </summary>
+        void Open();
+
+        string ShortName { get; }
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Models/FileEntity.cs">
+using System;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Enums;
+using LocalNode.Core.Attributes;
+
+namespace LocalNode.Core.Models
+{
+    /// <summary>
+    /// Base abstract class for all file types in the system.
+    /// </summary>
+    [FileCategory("Generic")]
+    //REIKALAVIMAS
+    public abstract class FileEntity : IFileEntity
+    {
+        public Guid Id { get; protected set; }
+        public string Name { get; protected set; }
+        public long Size { get; protected set; }
+        public DateTime CreatedAt { get; protected set; }
+        public string ShortName => Name.Length > 10 ? Name[..10] + "..." : Name;
+        public FilePermissions Permissions { get; set; }
+
+
+        protected FileEntity(string name, long size)
+        {
+            Id = Guid.NewGuid();
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Size = size;
+            CreatedAt = DateTime.UtcNow;
+            Permissions = FilePermissions.Read | FilePermissions.Write;
+        }
+
+        public virtual void Rename(string newName)
+        {
+            if (string.IsNullOrWhiteSpace(newName))
+                throw new ArgumentException("New name cannot be empty.", nameof(newName));
+            
+            Name = newName;
+        }
+
+        public abstract void Open();
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Services/FileCategorizer.cs">
+using LocalNode.Core.Extensions;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
+using System;
+using System.IO;
+
+namespace LocalNode.Core.Services;
+
+/// <summary>
+/// Provides utility methods to categorize files into specific <see cref="IFileEntity"/> types based on their extensions.
+/// </summary>
+public static class FileCategorizer
+{
+    /// <summary>
+    /// Categorizes a file located at the specified path into a concrete implementation of <see cref="IFileEntity"/>.
+    /// </summary>
+    public static IFileEntity Categorize(string filePath)
+    {
+        var info = new FileInfo(filePath);
+
+        //REIKALAVIMAS
+        var (fileName, fileSize) = info;
+
+        var ext = info.Extension.ToLowerInvariant();
+
+        return ext switch
+        {
+            ".mp4" or ".mp3" => new MediaFile(fileName, fileSize, TimeSpan.Zero),
+            ".zip" or ".rar" => new ArchiveFile(fileName, fileSize),
+            ".pdf" or ".docx" or ".txt" => new DocumentFile(fileName, fileSize, "System"),
+            _ => new UnknownFile(fileName, fileSize)
+        };
+    }
+}
+</file>
+
+<file path="LocalNode.UI/LocalNode.UI.csproj">
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.12" />
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.12">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LocalNode.Core\LocalNode.Core.csproj" />
+  </ItemGroup>
+</Project>
+</file>
+
+<file path="LocalNode.UI/Services/FileLogger.cs">
+using LocalNode.Core.Interfaces;
+using LocalNode.UI.ViewModels;
+using System;
+using System.IO;
+
+namespace LocalNode.UI.Services;
+
+public class FileLogger : ILogger
+{
+    private readonly SettingsViewModel _settings;
+    private readonly object _lockObj = new(); 
+    public FileLogger(SettingsViewModel settings)
+    {
+        _settings = settings;
+    }
+
+    private string GetLogFilePath()
+    {
+        string dir = string.IsNullOrWhiteSpace(_settings.LogDirectory)
+            ? AppDomain.CurrentDomain.BaseDirectory
+            : _settings.LogDirectory;
+
+        return Path.Combine(dir, "Log.txt");
+    }
+
+    private void WriteToFile(string level, string message, Exception? ex = null)
+    {
+        lock (_lockObj)
+        {
+            try
+            {
+                string path = GetLogFilePath();
+                using var writer = File.AppendText(path);
+
+                writer.WriteLine($"[{level}] {DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
+
+                if (ex != null)
+                {
+                    writer.WriteLine($"        Exception: {ex.Message}");
+                    writer.WriteLine($"        StackTrace: {ex.StackTrace}");
+                }
+            }
+            catch
+            {
+                // If logging fails (e.g. folder was deleted by user), we safely ignore it to prevent crashing the app
+            }
+        }
+    }
+    //REIKALAVIMAS
+    public void LogInfo(string message) => WriteToFile(level: "INFO", message: message);
+
+    public void LogWarning(string message) => WriteToFile(level: "WARN", message: message);
+
+    public void LogError(string message, Exception? ex = null) => WriteToFile(level: "ERROR", message: message, ex: ex);
+}
+</file>
+
+<file path="LocalNode.Core/Models/DocumentFile.cs">
+using System;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Attributes;
+
+namespace LocalNode.Core.Models
+{
+    /// <summary>
+    /// Represents a document file (e.g., PDF, Word, Text).
+    /// </summary>
+    
+   
+    [FileCategory("Document")]
+    public sealed class DocumentFile : FileEntity, IComparable<DocumentFile>, IEquatable<DocumentFile>, IFormattable
+    { 
+        static DocumentFile()
+        {
+
+        }
+
+        public string Author { get; set; }
+        public int WordCount { get; set; }
+
+
+        public DocumentFile(string name, long size, string author = "Unknown") : base(name, size)
+        {
+            Author = author;
+        }
+
+        public override void Open()
+        {
+            Console.WriteLine($"[Viewer] Opening document: '{Name}' authored by {Author}. Size: {Size} bytes.");
+        }
+        //REIKALAVIMAS
+        #region IComparable<T> Implementation
+        public int CompareTo(DocumentFile? other)
+        {
+            if (other == null) return 1;
+            int sizeComparison = this.Size.CompareTo(other.Size);
+            if (sizeComparison != 0) return sizeComparison;
+            return string.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase);
+        }
+        #endregion
+        //REIKALAVIMAS
+        #region IEquatable<T> Implementation
+        public bool Equals(DocumentFile? other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return this.Id == other.Id;
+        }
+        public override bool Equals(object? obj) => Equals(obj as DocumentFile);
+        #endregion
+        //REIKALAVIMAS
+        #region IFormattable Implementation
+        public string ToString(string? format, IFormatProvider? formatProvider)
+        {
+            if (string.IsNullOrEmpty(format)) format = "G";
+            switch (format.ToUpperInvariant())
+            {
+                case "G":
+                case "N": return $"{Name} ({Size} bytes)";
+                case "D": return $"Document: {Name} | Author: {Author} | Created: {CreatedAt:yyyy-MM-dd}";
+                case "S": return $"{Name} [{Size / 1024.0:F2} KB]";
+                default: throw new FormatException($"The '{format}' format string is not supported.");
+            }
+        }
+        #endregion
+        //REIKALAVIMAS
+        #region Deconstructor
+        public void Deconstruct(out string name, out long size, out string author, out int wordCount)
+        {
+            name = Name;
+            size = Size;
+            author = Author;
+            wordCount = WordCount;
+        }
+        #endregion
+        //REIKALAVIMAS
+        #region Operator Overloading
+        public static bool operator ==(DocumentFile? left, DocumentFile? right)
+        {
+            if (ReferenceEquals(left, null)) return ReferenceEquals(right, null);
+            return left.Equals(right);
+        }
+        public static bool operator !=(DocumentFile? left, DocumentFile? right) => !(left == right);
+
+        //REIKALAVIMAS
+        public object Clone() => new DocumentFile(Name, Size, Author);
+
+        public static DocumentFile operator +(DocumentFile left, DocumentFile right)
+        {
+            if (left == null || right == null) throw new ArgumentNullException("Cannot add null documents.");
+
+            //REIKALAVIMAS
+            var clonedLeft = (DocumentFile)left.Clone();
+
+            return new DocumentFile($"{clonedLeft.Name}_{right.Name}", clonedLeft.Size + right.Size, $"{clonedLeft.Author} & {right.Author}");
+        }   
+        #endregion
+
+
+    }
+}
+</file>
+
+<file path="LocalNode.Core/Services/FileHostingService.cs">
+using LocalNode.Core.Enums;
+using LocalNode.Core.Exceptions;
+using LocalNode.Core.Extensions;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
+using LocalNode.Core.Records;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+namespace LocalNode.Core.Services
+{
+    public class FileHostingService
+    {
+        private readonly ILogger _logger;
+        private DateTime _lastScanTime = DateTime.MinValue;
+        public FileHostingService(ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger.LogInfo("[System] FileHostingService instance initialized.");
+        }
+        //REIKALAVIMAS
+        public event EventHandler<IFileEntity>? OnFileScanned;
+
+        public NodeFileCollection<IFileEntity> GetFilesInDirectory(string folderPath)
+        {
+            //REIKALAVIMAS
+            if (!Directory.Exists(folderPath))
+                throw new NodeDirectoryNotFoundException(folderPath);
+
+            //REIKALAVIMAS
+            var entities = new NodeFileCollection<IFileEntity>();
+            var files = Directory.GetFiles(folderPath);
+
+            foreach (var f in files)
+            {
+                var entity = FileCategorizer.Categorize(f);
+                entities.Add(entity);
+
+                //REIKALAVIMAS
+                OnFileScanned?.Invoke(this, entity);
+            }
+            return entities;
+        }
+
+
+        public long GetDirectorySize(string folderPath)
+        {
+            if (!Directory.Exists(folderPath)) return 0;
+            return Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                            .Sum(f => new FileInfo(f).Length);
+        }
+
+
+        public void AddPhysicalFiles(string destinationFolder, params string[] sourceFilePaths)
+        {
+            if (!Directory.Exists(destinationFolder)) return;
+
+            foreach (var sourcePath in sourceFilePaths)
+            {
+                if (File.Exists(sourcePath))
+                {
+                    var destPath = Path.Combine(destinationFolder, Path.GetFileName(sourcePath));
+                    if (!File.Exists(destPath)) File.Copy(sourcePath, destPath);
+                }
+            }
+            _logger.LogInfo($"Added {sourceFilePaths.Length} files to {destinationFolder}");
+        }
+
+
+        public bool DeletePhysicalFile(string fullPath)
+        {
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+                _logger.LogInfo($"Deleted file: {fullPath}");
+                return true;
+            }
+            if (Directory.Exists(fullPath))
+            {
+                Directory.Delete(fullPath, true);
+                _logger.LogInfo($"Deleted directory: {fullPath}");
+                return true;
+            }
+            return false;
+        }
+
+        //REIKALAVIMAS
+        public bool TryGetPhysicalFile(string filePath, out IFileEntity fileEntity)
+        {
+            if (File.Exists(filePath))
+            {
+                fileEntity = FileCategorizer.Categorize(filePath);
+                return true;
+            }
+            fileEntity = null!;
+            return false;
+        }
+
+
+        public IEnumerable<IFileEntity> FilterFiles(string folderPath, Func<IFileEntity, bool> predicate)
+        {
+            return GetFilesInDirectory(folderPath).Where(predicate);
+        }
+
+
+        public IFileEntity[]? GetRecentFiles(string folderPath, int count)
+        {
+            var files = GetFilesInDirectory(folderPath).ToArray();
+            if (files.Length == 0) return null;
+
+            int start = Math.Max(0, files.Length - count);
+            var recent = files[start..^0];
+            var firstRecent = recent?[0];
+            return recent;
+        }
+
+
+        public void ProcessFileEntity(IFileEntity entity)
+        {
+            //REIKALAVIMAS
+            entity.LogEntityAction(_logger, "PROCESS");
+
+            //REIKALAVIMAS
+            switch (entity)
+            {
+                case DocumentFile largeDoc when largeDoc.Size > 1048576:
+                    _logger.LogWarning($"Large document: {largeDoc.Name}");
+                    break;
+                case DocumentFile regularDoc:
+                    _logger.LogInfo($"Document: {regularDoc.Name}");
+                    break;
+                case MediaFile media when media.Duration.TotalMinutes > 60:
+                    _logger.LogWarning($"Long media file detected: {media.Name}");
+                    break;
+            }
+            ///REIKALAVIMAS
+            if (entity is DocumentFile doc)
+            {
+                //REIKALAVIMAS
+                var (name, size, author, wordCount) = doc;
+                //REIKALAVIMAS
+                _logger.LogInfo($"Categorized: {doc:S}");
+                
+                DocumentFile template = new DocumentFile("Template.docx", 0, "System");
+                //REIKALAVIMAS
+                if (doc == template)
+                {
+                    _logger.LogWarning($"Duplicate detected: {name}");
+                }
+
+                if (wordCount > 0)
+                {
+                    DocumentFile combined = doc + template;
+                    _logger.LogInfo($"Combined stats: {combined:N}");
+                }
+            }
+            else
+            {
+                _logger.LogInfo($"Entity: {entity.Name}");
+            }
+        }
+
+        public bool CanReadFile(string filePath)
+        {
+            if (TryGetPhysicalFile(filePath, out var fileEntity))
+            {
+                bool hasPermission = (fileEntity.Permissions & FilePermissions.Read) == FilePermissions.Read;
+
+                if (!hasPermission)
+                {
+                    _logger.LogWarning($"[Security] Access denied. User attempted to open '{filePath}' without Read permissions.");
+                }
+                else
+                {
+                    _logger.LogInfo($"[Action] User successfully opened '{fileEntity.Name}'.");
+                }
+                return hasPermission;
+            }
+
+            return Directory.Exists(filePath);
+        }
+    
+    public FileStatsRecord GetSystemStats(string folderPath)
+        {
+            if (!Directory.Exists(folderPath))
+                return new FileStatsRecord(0, 0);
+
+            var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
+            long totalSize = files.Sum(f => new FileInfo(f).Length);
+
+            return new FileStatsRecord(files.Length, totalSize);
+        }
+
+    } 
+}
+</file>
+
+<file path="LocalNode.UI/ViewModels/DashboardViewModel.cs">
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
+using LocalNode.Core.Services;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+
+namespace LocalNode.UI.ViewModels;
+
+public partial class DashboardViewModel : ViewModelBase
+{
+
+    public static DateTime GlobalLastActionTime { get; set; } = DateTime.MinValue;
+    private readonly FileHostingService _fileService;
+    private readonly SettingsViewModel _settings;
+    private readonly ILogger _logger;
+    private HttpListener? _listener;
+    private readonly DiscoveryService _discoveryService = new();
+
+    [ObservableProperty] private int _totalFiles;
+    [ObservableProperty] private string _totalSize = "0 MB";
+    [ObservableProperty] private string _lastUpdated = "Never";
+
+    [ObservableProperty] private bool _isHosting = false;
+    [ObservableProperty] private string _serverStatusMessage = "Ready to host.";
+
+
+    public DashboardViewModel(FileHostingService fileService, SettingsViewModel settings, ILogger logger)
+    {
+        _fileService = fileService;
+        _settings = settings;
+        _logger = logger;
+    }
+    public void RefreshStats()
+    {
+        if (!IsHosting || string.IsNullOrWhiteSpace(_settings.DefaultHostFolder) || !Directory.Exists(_settings.DefaultHostFolder))
+        {
+            TotalFiles = 0;
+            TotalSize = "0 B";
+            return;
+        }
+
+        Task.Run(() =>
+        {
+            var stats = _fileService.GetSystemStats(_settings.DefaultHostFolder);
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                TotalFiles = stats.TotalFiles;
+                TotalSize = FormatSize(stats.TotalSizeBytes);
+
+                LastUpdated = GlobalLastActionTime == DateTime.MinValue
+                    ? "Just now"
+                    : GlobalLastActionTime.ToString("HH:mm:ss");
+            });
+        });
+    }
+    private string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private bool _isBusy = false;
+
+    [RelayCommand]
+    private async Task ToggleHostingAsync()
+    {
+        if (_isBusy) return;
+
+        _isBusy = true;
+
+        if (IsHosting)
+        {
+            StopServer();
+            _discoveryService.Stop();
+        }
+        else
+        {
+            StartServer();
+            bool requiresPassword = !string.IsNullOrWhiteSpace(_settings.RoomPassword);
+            string nodeName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : "LocalNode User";
+
+            if (int.TryParse(_settings.DefaultPort, out int customPort))
+            {
+                _discoveryService.StartAnnouncing(nodeName, customPort, requiresPassword);
+            }
+            else
+            {
+                _discoveryService.StartAnnouncing(nodeName, 5050, requiresPassword);
+            }
+        }
+
+        await Task.Delay(500);
+        _isBusy = false;
+    }
+
+    private void StartServer()
+    {
+        string folder = _settings.DefaultHostFolder;
+        string portStr = _settings.DefaultPort;
+
+        if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+        {
+            ServerStatusMessage = "Please set a valid Hosting Folder in Settings!";
+            return;
+        }
+        try
+        {
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://+:{portStr}/");
+            _listener.Start();
+
+            IsHosting = true;
+            GlobalLastActionTime = DateTime.Now;
+            ServerStatusMessage = $"Hosting on port {portStr}...";
+            _logger.LogInfo($"[Server] Started hosting on port {portStr}. Folder: {folder}");
+
+            var files = Directory.GetFiles(folder);
+            //REIKALAVIMAS 
+            List<DocumentFile> docs = files.Select(f => FileCategorizer.Categorize(f)).OfType<DocumentFile>().ToList();
+            docs.Sort();
+
+            foreach (var doc in docs)
+            {
+                _logger.LogInfo($"Sorted document: {doc:S}");
+            }
+
+            foreach (var filePath in files)
+            {
+                var entity = FileCategorizer.Categorize(filePath);
+                _fileService.ProcessFileEntity(entity);
+            }
+
+            Task.Run(ListenLoop);
+            RefreshStats();
+        }
+        catch (Exception ex)
+        {
+            ServerStatusMessage = $"Failed to start: {ex.Message}";
+            _logger.LogError("[Server] Failed to start HTTP Listener.", ex);
+        }
+    }
+
+    private void StopServer()
+    {
+        _listener?.Stop();
+        _listener?.Close();
+        _listener = null;
+
+        IsHosting = false;
+        ServerStatusMessage = "Server stopped.";
+
+
+        RefreshStats();
+    }
+
+    private async Task ListenLoop()
+    {
+        while (IsHosting && _listener != null && _listener.IsListening)
+        {
+            try
+            {
+                var context = await _listener.GetContextAsync();
+                _logger.LogInfo("Gauta užklausa");
+                _ = Task.Run(async () =>
+                {
+                    var req = context.Request;
+                    var res = context.Response;
+                    //REIKALAVIMAS
+                    string clientIp = req.RemoteEndPoint?.ToString() ?? "Unknown IP";
+                    string clientName = req.Headers["X-User-Name"] ?? "Anonymous Client";
+
+                    try
+                    {
+                        string requiredPass = _settings.RoomPassword;
+                        if (!string.IsNullOrEmpty(requiredPass) && req.Headers["X-Room-Password"] != requiredPass)
+                        {
+                            res.StatusCode = 401;
+                            res.Close();
+                            return;
+                        }
+
+                        string requestedPath = req.QueryString["path"] ?? "";
+                        string targetPhysicalPath = Path.GetFullPath(Path.Combine(_settings.DefaultHostFolder, requestedPath));
+
+                        // Security check
+                        if (!targetPhysicalPath.StartsWith(Path.GetFullPath(_settings.DefaultHostFolder)))
+                        {
+                            res.StatusCode = 403;
+                            return;
+                        }
+
+                        if (req.Url!.AbsolutePath == "/api/files")
+                        {
+                            var items = new List<object>();
+
+                            if (Directory.Exists(targetPhysicalPath))
+                            {
+                                // 1. Add Folders
+                                foreach (var d in Directory.GetDirectories(targetPhysicalPath))
+                                {
+                                    items.Add(new { Name = Path.GetFileName(d), Type = "Folder", Size = 0L, IsFolder = true });
+                                }
+                                // 2. Add Files
+                                foreach (var f in Directory.GetFiles(targetPhysicalPath))
+                                {
+                                    var info = new FileInfo(f);
+                                    var cat = FileCategorizer.Categorize(f).GetType().Name.Replace("File", "");
+                                    items.Add(new { Name = info.Name, Type = cat, Size = info.Length, IsFolder = false });
+                                }
+                            }
+
+                            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(items);
+                            res.ContentType = "application/json";
+                            res.ContentLength64 = bytes.Length;
+                            res.StatusCode = 200;
+                            await res.OutputStream.WriteAsync(bytes, 0, bytes.Length);
+                        }
+                        else if (req.Url.AbsolutePath == "/api/download")
+                        {
+                            if (Directory.Exists(targetPhysicalPath))
+                            {
+                                // ZIP FOLDER ON THE FLY
+                                _logger.LogInfo($"[Network] {clientName} ({clientIp}) is downloading folder '{requestedPath}'.");
+                                string tempZip = Path.GetTempFileName() + ".zip";
+                                ZipFile.CreateFromDirectory(targetPhysicalPath, tempZip);
+
+                                res.ContentType = "application/zip";
+                                res.AddHeader("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(targetPhysicalPath)}.zip\"");
+                                using var fs = File.OpenRead(tempZip);
+                                res.ContentLength64 = fs.Length;
+                                await fs.CopyToAsync(res.OutputStream);
+                                fs.Close();
+                                File.Delete(tempZip); // Clean up temp file
+                            }
+                            else if (File.Exists(targetPhysicalPath))
+                            {
+                                // STANDARD FILE DOWNLOAD
+                                _logger.LogInfo($"[Network] {clientName} ({clientIp}) is downloading '{requestedPath}'.");
+                                res.ContentType = "application/octet-stream";
+                                res.AddHeader("Content-Disposition", $"attachment; filename=\"{Uri.EscapeDataString(Path.GetFileName(targetPhysicalPath))}\"");
+                                using var fs = File.OpenRead(targetPhysicalPath);
+                                res.ContentLength64 = fs.Length;
+                                await fs.CopyToAsync(res.OutputStream);
+                            }
+                            else { res.StatusCode = 404; }
+                        }
+                    }
+                    catch { res.StatusCode = 500; }
+                    finally { try { res.Close(); } catch { } }
+                });
+            }
+            catch { break; }
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/ViewModels/HostedFilesViewModel.cs">
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Exceptions;
+using LocalNode.Core.Extensions;
+using LocalNode.Core.Interfaces;
+using LocalNode.Core.Models;
+using LocalNode.Core.Services;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace LocalNode.UI.ViewModels
+{
+    public partial class HostedFileItem : ObservableObject
+    {
+        [ObservableProperty] private string _name = string.Empty;
+        [ObservableProperty] private string _fileType = string.Empty;
+        [ObservableProperty] private string _sizeFormatted = string.Empty;
+        [ObservableProperty] private string _fullPath = string.Empty;
+        [ObservableProperty] private bool _isFolder;
+    }
+
+    public partial class HostedFilesViewModel : ViewModelBase
+    {
+        private readonly FileHostingService _fileService;
+        public SettingsViewModel Settings { get; set; } = null!;
+        public DashboardViewModel Dashboard { get; set; } = null!;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanNavigateUp))]
+        private string _currentLocalPath = string.Empty;
+
+        [ObservableProperty]
+        private ObservableCollection<HostedFileItem> _files = new();
+        public bool CanNavigateUp =>
+            !string.IsNullOrEmpty(CurrentLocalPath) &&
+            Settings != null &&
+            !string.IsNullOrWhiteSpace(Settings.DefaultHostFolder) &&
+            !string.Equals(
+                CurrentLocalPath.TrimEnd(Path.DirectorySeparatorChar),
+                Settings.DefaultHostFolder.TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
+
+        public HostedFilesViewModel(FileHostingService fileService)
+        {
+            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+        }
+
+        [RelayCommand]
+        public void RefreshFiles()
+        {
+            Files.Clear();
+
+            if (Settings == null || string.IsNullOrWhiteSpace(Settings.DefaultHostFolder) || !Directory.Exists(Settings.DefaultHostFolder))
+                return;
+
+            if (string.IsNullOrEmpty(CurrentLocalPath) || !Directory.Exists(CurrentLocalPath))
+                CurrentLocalPath = Settings.DefaultHostFolder;
+
+            var folderToScan = CurrentLocalPath;
+
+            Task.Run(() =>
+            {
+                var newItems = new List<HostedFileItem>();
+                string folderToScan = string.IsNullOrEmpty(CurrentLocalPath) ? Settings.DefaultHostFolder : CurrentLocalPath;
+
+                try
+                {
+                    foreach (var d in Directory.GetDirectories(folderToScan)) { /* jūsų esamas kodas */ }
+
+                    //REIKALAVIMAS
+                    NodeFileCollection<IFileEntity> entities = _fileService.GetFilesInDirectory(folderToScan);
+
+                    //REIKALAVIMAS
+                    var bigFiles = entities.GetLargeFiles(1024 * 1024).ToList();
+                    if (bigFiles.Any()) Console.WriteLine($"Found {bigFiles.Count} large files using yield iterator.");
+
+                    foreach (var entity in entities)
+                    {
+                        newItems.Add(new HostedFileItem
+                        {
+                            Name = entity.Name,
+                            FullPath = Path.Combine(folderToScan, entity.Name),
+                            FileType = entity.GetType().Name.Replace("File", ""),
+                            SizeFormatted = LocalNode.Core.Extensions.FileEntityExtensions.ToHumanReadableSize(entity),
+                            IsFolder = false
+                        });
+                    }
+                }
+                //REIKALAVIMAS
+                catch (NodeDirectoryNotFoundException ex)
+                {
+                    Console.WriteLine($"UI caught an exception: {ex.MissingPath}");
+                }
+                Dispatcher.UIThread.Post(() =>
+                {
+                    foreach (var item in newItems)
+                    {
+                        Files.Add(item);
+                    }
+                    OnPropertyChanged(nameof(CanNavigateUp));
+                });
+            });
+        }
+
+        public void NavigateIntoFolder(string folderName)
+        {
+            var newPath = Path.Combine(CurrentLocalPath, folderName);
+            if (Directory.Exists(newPath))
+            {
+                CurrentLocalPath = newPath;
+                RefreshFiles();
+            }
+        }
+
+        [RelayCommand]
+        public void NavigateUp()
+        {
+            if (!CanNavigateUp) return;
+
+            var parentPath = Path.GetDirectoryName(CurrentLocalPath);
+            if (!string.IsNullOrEmpty(parentPath))
+            {
+                CurrentLocalPath = parentPath;
+                RefreshFiles();
+            }
+        }
+
+        [RelayCommand]
+        public void OpenFile(string fullPath)
+        {
+            if (!_fileService.CanReadFile(fullPath))
+            {
+                return;
+            }
+            if (File.Exists(fullPath) || Directory.Exists(fullPath))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = fullPath,
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                }
+            }
+        }
+        [RelayCommand]
+        public void DeleteFile(string fullPath)
+        {
+            if (_fileService.DeletePhysicalFile(fullPath))
+            {
+                RefreshFiles();
+                Dashboard?.RefreshStats();
+            }
+        }
+
+        public void AddPhysicalFile(string sourceFilePath)
+        {
+            if (string.IsNullOrEmpty(CurrentLocalPath)) return;
+            _fileService.AddPhysicalFiles(CurrentLocalPath, sourceFilePath);
+            RefreshFiles();
+            Dashboard?.RefreshStats();
+        }
+
+        private string FormatSize(long bytes)
+        {
+            if (bytes == 0) return "0 B";
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int i = 0;
+            double dblSByte = bytes;
+            while (dblSByte >= 1024 && i < suffixes.Length - 1)
+            {
+                dblSByte /= 1024;
+                i++;
+            }
+            return $"{dblSByte:0.##} {suffixes[i]}";
+        }
+    }
+}
+</file>
+
+<file path="LocalNode.UI/ViewModels/NetworkClientViewModel.cs">
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LocalNode.Core.Services;
+using LocalNode.Core.Database;
+using LocalNode.Core.Extensions;
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+
+namespace LocalNode.UI.ViewModels;
+
+public class RemoteFileItem
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public long Size { get; set; }
+    public bool IsFolder { get; set; }
+    public string SizeFormatted => (IsFolder && Size == 0) ? "" : FormatSize(Size);
+    private static string FormatSize(long size)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = size;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+}
+
+public partial class NetworkClientViewModel : ViewModelBase
+{
+    private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly SettingsViewModel _settings;
+    private readonly DiscoveryService _discoveryService = new();
+
+    [ObservableProperty] private bool _isScanning = true;
+    [ObservableProperty] private string _serverUrl = "http://localhost:5050";
+    [ObservableProperty] private string _roomPassword = string.Empty;
+    [ObservableProperty] private string _statusMessage = "Ready to connect.";
+    [ObservableProperty] private bool _isConnected = false;
+    [ObservableProperty] private ObservableCollection<DiscoveredNode> _availableNodes = new();
+    [ObservableProperty] private bool _showPasswordPrompt = false;
+    private DiscoveredNode? _selectedNode;
+    [ObservableProperty] private string _currentRemotePath = string.Empty;
+
+    [ObservableProperty] private ObservableCollection<RemoteFileItem> _remoteFiles = new();
+
+    private CancellationTokenSource? _pingCts;
+
+    public NetworkClientViewModel(SettingsViewModel settings)
+    {
+        _settings = settings;
+
+        _ = Task.Run(() => _discoveryService.ListenForNodes(node =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (node.IP == "127.0.0.1") return;
+                if (!AvailableNodes.Any(n => n.Name == node.Name))
+                {
+                    AvailableNodes.Add(node);
+                }
+            });
+        }));
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000); 
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                IsScanning = false;
+
+                if (AvailableNodes.Count == 0)
+                {
+                    StatusMessage = "No active nodes found.";
+                }
+            });
+        });
+    }
+
+    private void AttachClientHeaders(HttpRequestMessage request)
+    {
+        if (!string.IsNullOrEmpty(RoomPassword))
+        {
+            request.Headers.Add("X-Room-Password", RoomPassword);
+        }
+        //REIKAKLAVIMAS
+        string safeUserName = string.IsNullOrWhiteSpace(_settings.DisplayName) ? "Anonymous" : _settings.DisplayName;
+        request.Headers.Add("X-User-Name", safeUserName);
+    }
+    [RelayCommand]
+    public async Task SelectDiscoveredNode(DiscoveredNode node)
+    {
+        _selectedNode = node;
+        ServerUrl = $"http://{node.IP}:{node.Port}";
+
+        if (node.NeedsPassword)
+        {
+            StatusMessage = $"Node '{node.Name}' requires a password.";
+            ShowPasswordPrompt = true;
+        }
+        else
+        {
+            RoomPassword = string.Empty;
+            await ConnectAsync();
+        }
+    }
+    [RelayCommand]
+    private void DisconnectServer()
+    {
+        Disconnect();
+    }
+    [RelayCommand]
+    public async Task SubmitPasswordAndConnect()
+    {
+        ShowPasswordPrompt = false;
+        await ConnectAsync();
+    }
+
+    [RelayCommand]
+    public void CancelPassword()
+    {
+        ShowPasswordPrompt = false;
+        StatusMessage = "Connection cancelled.";
+    }
+    [RelayCommand]
+    public async Task ConnectAsync()
+    {
+        if (IsConnected) { Disconnect(); return; }
+
+        if (string.IsNullOrWhiteSpace(ServerUrl))
+        {
+            StatusMessage = "Please enter a valid Server URL.";
+            return;
+        }
+
+        StatusMessage = "Connecting...";
+        CurrentRemotePath = string.Empty;
+
+        await LoadFilesFromPath(CurrentRemotePath);
+
+        if (IsConnected)
+        {
+            _pingCts = new CancellationTokenSource();
+            _ = StartHealthCheckLoop(_pingCts.Token);
+        }
+    }
+
+    public async Task LoadFilesFromPath(string path)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{ServerUrl.TrimEnd('/')}/api/files?path={Uri.EscapeDataString(path ?? "")}");
+            AttachClientHeaders(request);
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                StatusMessage = "Connection failed: Incorrect Password.";
+                IsConnected = false;
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            var files = JsonSerializer.Deserialize<RemoteFileItem[]>(json, _jsonOptions);
+
+            RemoteFiles.Clear();
+            if (files != null) foreach (var f in files) RemoteFiles.Add(f);
+
+            CurrentRemotePath = path;
+            IsConnected = true;
+            StatusMessage = string.IsNullOrEmpty(path) ? "Viewing Root Directory" : $"Viewing: /{path.Replace("\\", "/")}";
+        }
+        catch (Exception ex)
+        {
+            IsConnected = false;
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+    public async Task NavigateIntoFolder(string folderName)
+    {
+        var newPath = Path.Combine(CurrentRemotePath, folderName);
+        await LoadFilesFromPath(newPath);
+    }
+    [RelayCommand]
+    public async Task RefreshNodesAsync()
+    {
+        AvailableNodes.Clear();
+        IsScanning = true;
+        StatusMessage = "Scanning network...";
+        await Task.Delay(3000);
+
+        IsScanning = false;
+
+        if (AvailableNodes.Count == 0)
+        {
+            StatusMessage = "No nodes found.";
+        }
+        else
+        {
+            StatusMessage = $"Found {AvailableNodes.Count} nodes.";
+        }
+    }
+
+    [RelayCommand]
+    public async Task NavigateUp()
+    {
+        if (string.IsNullOrEmpty(CurrentRemotePath)) return;
+        var parentPath = Path.GetDirectoryName(CurrentRemotePath) ?? string.Empty;
+
+        //REIKALAVIMAS
+        CurrentRemotePath = parentPath.SanitizePath();
+
+        await LoadFilesFromPath(CurrentRemotePath);
+    }
+
+    private void Disconnect()
+    {
+        _pingCts?.Cancel();
+        IsConnected = false;
+        RemoteFiles.Clear();
+        StatusMessage = "Disconnected from server.";
+    }
+
+    private async Task StartHealthCheckLoop(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested && IsConnected)
+        {
+            try
+            {
+                await Task.Delay(3000, token);
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{ServerUrl.TrimEnd('/')}/api/files?path={Uri.EscapeDataString(CurrentRemotePath)}");
+                AttachClientHeaders(request);
+                var response = await _httpClient.SendAsync(request, token);
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                //REIKALAVIMAS
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (IsConnected)
+                    {
+                        IsConnected = false;
+                        RemoteFiles.Clear();
+                        StatusMessage = "Lost connection to the server! Auto-disconnected.";
+                    }
+                });
+                break;
+            }
+        }
+    }
+
+    public async Task DownloadItemAsync(string itemName)
+    {
+        try
+        {
+            StatusMessage = $"Downloading {itemName}...";
+            var remotePathToDownload = Path.Combine(CurrentRemotePath, itemName);
+
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{ServerUrl.TrimEnd('/')}/api/download?path={Uri.EscapeDataString(remotePathToDownload)}");
+            AttachClientHeaders(request);
+
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+            string finalFileName = itemName;
+            if (response.Content.Headers.ContentDisposition?.FileName != null)
+            {
+                finalFileName = response.Content.Headers.ContentDisposition.FileName.Trim('"');
+            }
+            string downloadPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", finalFileName);
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var fs = File.Create(downloadPath);
+            await stream.CopyToAsync(fs);
+            //REIKALAVIMAS
+            using var db = new NodeDbContext();
+            db.Database.EnsureCreated();
+            db.DownloadLogs.Add(new DownloadLog { FileName = finalFileName, DownloadedAt = DateTime.Now });
+            db.SaveChanges();
+
+            StatusMessage = $"Saved to Downloads: {finalFileName}!";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Download failed: {ex.Message}";
+        }
+    }
+  
+}
+</file>
+
+</files>

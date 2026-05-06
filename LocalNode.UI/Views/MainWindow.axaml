@@ -74,7 +74,8 @@
 
 					<RadioButton Classes="NavButton" Content="Network Client" Command="{Binding NavigateCommand}" CommandParameter="Network Client"
                                  GroupName="SidebarNav"/>
-
+					<RadioButton Classes="NavButton" Content="System Logs" Command="{Binding NavigateCommand}" CommandParameter="System Logs"
+								 GroupName="SidebarNav"/>
 					<RadioButton Classes="NavButton" Content="Settings" Command="{Binding NavigateCommand}" CommandParameter="Settings"
                                  GroupName="SidebarNav"/>
 				</StackPanel>
