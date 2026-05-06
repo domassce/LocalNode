@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalNode.UI.ViewModels"
+             x:Class="LocalNode.UI.Views.DownloadsView"
+             x:DataType="vm:DownloadsViewModel">
+
+	<Grid RowDefinitions="Auto, *">
+		
+		<Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,20">
+			<TextBlock Grid.Column="0" Text="Download Manager" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+			<Button Grid.Column="1" Content="Clear Completed" Command="{Binding ClearCompletedCommand}" Background="#2B2B40" Foreground="White" CornerRadius="6" Padding="15,8"/>
+		</Grid>
+
+		<Border Grid.Row="1" Background="#1E1E2D" CornerRadius="12" BorderBrush="#2B2B40" BorderThickness="1">
+			<ListBox ItemsSource="{Binding ActiveDownloads}" Background="Transparent" Margin="10">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<Border Background="#151521" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+							<Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, Auto">
+								
+								<StackPanel Grid.Row="0" Grid.Column="0" Spacing="5">
+									<TextBlock Text="{Binding FileName}" Foreground="White" FontWeight="Bold" FontSize="14"/>
+									<StackPanel Orientation="Horizontal" Spacing="10">
+										<TextBlock Text="{Binding State}" Foreground="#009EF7" FontSize="12" FontWeight="SemiBold"/>
+										<TextBlock Text="|" Foreground="#4A4A5A"/>
+										<TextBlock Text="{Binding SpeedMessage}" Foreground="#A1A5B7" FontSize="12"/>
+									</StackPanel>
+								</StackPanel>
+
+								<StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Top">
+
+									<!-- Rodomi TIK KOL SIUNČIAMA arba PRISTABDYTA -->
+									<Button Content="Pause" Command="{Binding $parent[UserControl].((vm:DownloadsViewModel)DataContext).PauseDownloadCommand}" CommandParameter="{Binding}"
+											Background="#F6C000" Foreground="White" CornerRadius="4" Padding="10,5"
+											IsVisible="{Binding State, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:DownloadState.Downloading}}"/>
+
+									<Button Content="Resume" Command="{Binding $parent[UserControl].((vm:DownloadsViewModel)DataContext).ResumeDownloadCommand}" CommandParameter="{Binding}"
+											Background="#50CD89" Foreground="White" CornerRadius="4" Padding="10,5"
+											IsVisible="{Binding State, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:DownloadState.Paused}}"/>
+
+									<!-- CANCEL mygtukas dabar pasislepia, kai atsisiuntimas baigiamas -->
+									<Button Content="Cancel" Command="{Binding $parent[UserControl].((vm:DownloadsViewModel)DataContext).CancelDownloadCommand}" CommandParameter="{Binding}"
+											Background="#2B2B40" Foreground="White" CornerRadius="4" Padding="10,5"
+											IsVisible="{Binding IsNotCompleted}"/>
+
+									<!-- Rodomi TIK KAI SIUNTIMAS BAIGTAS -->
+									<Button Content="Show in Folder" Command="{Binding $parent[UserControl].((vm:DownloadsViewModel)DataContext).OpenFolderCommand}" CommandParameter="{Binding}"
+											Background="#009EF7" Foreground="White" CornerRadius="4" Padding="10,5" FontWeight="Bold"
+											IsVisible="{Binding IsCompleted}"/>
+
+									<Button Content="Delete" Command="{Binding $parent[UserControl].((vm:DownloadsViewModel)DataContext).DeleteFileCommand}" CommandParameter="{Binding}"
+											Background="#F1416C" Foreground="White" CornerRadius="4" Padding="10,5"
+											IsVisible="{Binding IsCompleted}"/>
+								</StackPanel>
+
+								<!-- Progreso juosta -->
+								<ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Value="{Binding ProgressPercentage}" Maximum="100" Height="8" Margin="0,15,0,0" Foreground="#009EF7" Background="#2B2B40"/>
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+		</Border>
+	</Grid>
+</UserControl>

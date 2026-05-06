@@ -45,7 +45,7 @@ public partial class NetworkClientViewModel : ViewModelBase
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly SettingsViewModel _settings;
     private readonly DiscoveryService _discoveryService = new();
-
+    private readonly DownloadsViewModel _downloadsViewModel;
     [ObservableProperty] private bool _isScanning = true;
     [ObservableProperty] private string _serverUrl = "http://localhost:5050";
     [ObservableProperty] private string _roomPassword = string.Empty;
@@ -60,9 +60,10 @@ public partial class NetworkClientViewModel : ViewModelBase
 
     private CancellationTokenSource? _pingCts;
 
-    public NetworkClientViewModel(SettingsViewModel settings)
+    public NetworkClientViewModel(SettingsViewModel settings, DownloadsViewModel downloadsViewModel)
     {
         _settings = settings;
+        _downloadsViewModel = downloadsViewModel;
 
         _ = Task.Run(() => _discoveryService.ListenForNodes(node =>
         {
@@ -270,35 +271,21 @@ public partial class NetworkClientViewModel : ViewModelBase
     {
         try
         {
-            StatusMessage = $"Downloading {itemName}...";
+            StatusMessage = $"Adding {itemName} to Download Manager...";
             var remotePathToDownload = Path.Combine(CurrentRemotePath, itemName);
+            string targetUrl = $"{ServerUrl.TrimEnd('/')}/api/download?path={Uri.EscapeDataString(remotePathToDownload)}";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{ServerUrl.TrimEnd('/')}/api/download?path={Uri.EscapeDataString(remotePathToDownload)}");
-            AttachClientHeaders(request);
+            var fileItem = RemoteFiles.FirstOrDefault(f => f.Name == itemName);
+            long totalSize = fileItem?.Size ?? 0;
+            string finalFileName = (fileItem != null && fileItem.IsFolder) ? $"{itemName}.zip" : itemName;
 
-            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
-            string finalFileName = itemName;
-            if (response.Content.Headers.ContentDisposition?.FileName != null)
-            {
-                finalFileName = response.Content.Headers.ContentDisposition.FileName.Trim('"');
-            }
-            string downloadPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", finalFileName);
-            using var stream = await response.Content.ReadAsStreamAsync();
-            using var fs = File.Create(downloadPath);
-            await stream.CopyToAsync(fs);
-            //REIKALAVIMAS
-            using var db = new NodeDbContext();
-            db.Database.EnsureCreated();
-            db.DownloadLogs.Add(new DownloadLog { FileName = finalFileName, DownloadedAt = DateTime.Now });
-            db.SaveChanges();
-
-            StatusMessage = $"Saved to Downloads: {finalFileName}!";
+            _downloadsViewModel.AddNewDownload(finalFileName, totalSize, targetUrl, _settings);
+            StatusMessage = $"Started downloading: {finalFileName}! Check 'Downloads' tab.";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Download failed: {ex.Message}";
+            StatusMessage = $"Failed to start download: {ex.Message}";
         }
     }
-  
+
 }

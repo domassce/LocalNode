@@ -39,6 +39,7 @@ public partial class SettingsView : UserControl
 
         if (folders.Count > 0)
         {
+
             //REIKALAVIMAS
             if (DataContext is SettingsViewModel vm)
             {

@@ -78,6 +78,7 @@
 								 GroupName="SidebarNav"/>
 					<RadioButton Classes="NavButton" Content="Settings" Command="{Binding NavigateCommand}" CommandParameter="Settings"
                                  GroupName="SidebarNav"/>
+					<RadioButton Classes="NavButton" Content="Downloads" Command="{Binding NavigateCommand}" CommandParameter="Downloads" GroupName="SidebarNav"/>
 				</StackPanel>
 
 				<TextBlock Grid.Row="2" Text="v0.0.3" Foreground="#4A4A5A" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,20"/>

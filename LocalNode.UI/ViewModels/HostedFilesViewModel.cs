@@ -70,10 +70,20 @@ namespace LocalNode.UI.ViewModels
 
                 try
                 {
-                    foreach (var d in Directory.GetDirectories(folderToScan)) { /* jūsų esamas kodas */ }
-
-                    //REIKALAVIMAS
-                    NodeFileCollection<IFileEntity> entities = _fileService.GetFilesInDirectory(folderToScan);
+                    foreach (var d in Directory.GetDirectories(folderToScan))
+                    {
+                        var dirInfo = new DirectoryInfo(d);
+                        newItems.Add(new HostedFileItem
+                        {
+                            Name = dirInfo.Name,
+                            FullPath = d,
+                            FileType = "Folder",
+                            SizeFormatted = "",
+                            IsFolder = true
+                        });
+                    }
+                        //REIKALAVIMAS
+                        NodeFileCollection<IFileEntity> entities = _fileService.GetFilesInDirectory(folderToScan);
 
                     //REIKALAVIMAS
                     var bigFiles = entities.GetLargeFiles(1024 * 1024).ToList();

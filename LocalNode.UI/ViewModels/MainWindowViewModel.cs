@@ -7,6 +7,7 @@ namespace LocalNode.UI.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private readonly DownloadsViewModel _downloadsViewModel;
     private readonly FileHostingService _fileService;
     private readonly SystemLogsViewModel _systemLogsViewModel;
     private readonly DashboardViewModel _dashboardViewModel;
@@ -20,7 +21,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        _systemLogsViewModel = new SystemLogsViewModel(_settingsViewModel);
         _settingsViewModel = new SettingsViewModel();
         UserName = _settingsViewModel.DisplayName;
 
@@ -28,12 +28,10 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileService = new FileHostingService(logger);
 
         _dashboardViewModel = new DashboardViewModel(_fileService, _settingsViewModel, logger);
-        _hostedFilesViewModel = new HostedFilesViewModel(_fileService)
-        {
-            Settings = _settingsViewModel
-        };
-
-        _networkClientViewModel = new NetworkClientViewModel(_settingsViewModel);
+        _hostedFilesViewModel = new HostedFilesViewModel(_fileService) { Settings = _settingsViewModel };
+        _downloadsViewModel = new DownloadsViewModel();
+        _systemLogsViewModel = new SystemLogsViewModel(_settingsViewModel);
+        _networkClientViewModel = new NetworkClientViewModel(_settingsViewModel, _downloadsViewModel);
         _hostedFilesViewModel.Dashboard = _dashboardViewModel;
         CurrentPageContent = _dashboardViewModel;
     }
@@ -60,6 +58,10 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (pageName == "Settings")
         {
             CurrentPageContent = _settingsViewModel;
+        }
+        else if (pageName == "Downloads")
+        {
+            CurrentPageContent = _downloadsViewModel;
         }
         else if (pageName == "System Logs")
         {

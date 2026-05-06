@@ -178,7 +178,6 @@ public partial class DashboardViewModel : ViewModelBase
                 {
                     var req = context.Request;
                     var res = context.Response;
-                    //REIKALAVIMAS
                     string clientIp = req.RemoteEndPoint?.ToString() ?? "Unknown IP";
                     string clientName = req.Headers["X-User-Name"] ?? "Anonymous Client";
 
@@ -195,7 +194,6 @@ public partial class DashboardViewModel : ViewModelBase
                         string requestedPath = req.QueryString["path"] ?? "";
                         string targetPhysicalPath = Path.GetFullPath(Path.Combine(_settings.DefaultHostFolder, requestedPath));
 
-                        // Security check
                         if (!targetPhysicalPath.StartsWith(Path.GetFullPath(_settings.DefaultHostFolder)))
                         {
                             res.StatusCode = 403;
@@ -208,16 +206,16 @@ public partial class DashboardViewModel : ViewModelBase
 
                             if (Directory.Exists(targetPhysicalPath))
                             {
-                                // 1. Add Folders
+                                
                                 foreach (var d in Directory.GetDirectories(targetPhysicalPath))
                                 {
                                     items.Add(new { Name = Path.GetFileName(d), Type = "Folder", Size = 0L, IsFolder = true });
                                 }
-                                // 2. Add Files
+                                
                                 foreach (var f in Directory.GetFiles(targetPhysicalPath))
                                 {
                                     var info = new FileInfo(f);
-                                    var cat = FileCategorizer.Categorize(f).GetType().Name.Replace("File", "");
+                                    var cat = LocalNode.Core.Services.FileCategorizer.Categorize(f).GetType().Name.Replace("File", "");
                                     items.Add(new { Name = info.Name, Type = cat, Size = info.Length, IsFolder = false });
                                 }
                             }
@@ -232,10 +230,9 @@ public partial class DashboardViewModel : ViewModelBase
                         {
                             if (Directory.Exists(targetPhysicalPath))
                             {
-                                // ZIP FOLDER ON THE FLY
                                 _logger.LogInfo($"[Network] {clientName} ({clientIp}) is downloading folder '{requestedPath}'.");
                                 string tempZip = Path.GetTempFileName() + ".zip";
-                                ZipFile.CreateFromDirectory(targetPhysicalPath, tempZip);
+                                System.IO.Compression.ZipFile.CreateFromDirectory(targetPhysicalPath, tempZip);
 
                                 res.ContentType = "application/zip";
                                 res.AddHeader("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(targetPhysicalPath)}.zip\"");
@@ -243,17 +240,49 @@ public partial class DashboardViewModel : ViewModelBase
                                 res.ContentLength64 = fs.Length;
                                 await fs.CopyToAsync(res.OutputStream);
                                 fs.Close();
-                                File.Delete(tempZip); // Clean up temp file
+                                File.Delete(tempZip);
                             }
                             else if (File.Exists(targetPhysicalPath))
                             {
-                                // STANDARD FILE DOWNLOAD
-                                _logger.LogInfo($"[Network] {clientName} ({clientIp}) is downloading '{requestedPath}'.");
+                                using var fs = File.OpenRead(targetPhysicalPath);
+                                long fileLength = fs.Length;
+                                long startByte = 0;
+                                long endByte = fileLength - 1;
+
+                                string rangeHeader = req.Headers["Range"] ?? string.Empty;
+
+                                if (!string.IsNullOrEmpty(rangeHeader) && rangeHeader.StartsWith("bytes="))
+                                {
+                                    var range = rangeHeader.Replace("bytes=", "").Split('-');
+                                    startByte = long.Parse(range[0]);
+                                    if (range.Length > 1 && !string.IsNullOrEmpty(range[1]))
+                                    {
+                                        endByte = long.Parse(range[1]);
+                                    }
+
+                                    res.StatusCode = 206;
+                                    res.AddHeader("Content-Range", $"bytes {startByte}-{endByte}/{fileLength}");
+                                }
+                                else
+                                {
+                                    res.StatusCode = 200;
+                                }
+
+                                long contentLength = endByte - startByte + 1;
+                                res.ContentLength64 = contentLength;
                                 res.ContentType = "application/octet-stream";
                                 res.AddHeader("Content-Disposition", $"attachment; filename=\"{Uri.EscapeDataString(Path.GetFileName(targetPhysicalPath))}\"");
-                                using var fs = File.OpenRead(targetPhysicalPath);
-                                res.ContentLength64 = fs.Length;
-                                await fs.CopyToAsync(res.OutputStream);
+
+                                fs.Seek(startByte, SeekOrigin.Begin);
+                                byte[] buffer = new byte[81920];
+                                int bytesRead;
+                                long bytesRemaining = contentLength;
+
+                                while (bytesRemaining > 0 && (bytesRead = await fs.ReadAsync(buffer, 0, (int)Math.Min(buffer.Length, bytesRemaining))) > 0)
+                                {
+                                    await res.OutputStream.WriteAsync(buffer, 0, bytesRead);
+                                    bytesRemaining -= bytesRead;
+                                }
                             }
                             else { res.StatusCode = 404; }
                         }
@@ -264,5 +293,6 @@ public partial class DashboardViewModel : ViewModelBase
             }
             catch { break; }
         }
-    }
+    
+}
 }
